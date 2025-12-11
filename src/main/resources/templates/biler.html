@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Biler</title>
+</head>
+<body>
+<h1>Biler</h1>
+
+<h2>Tilføj bil</h2>
+<form th:action="@{/biler}" th:object="${bil}" method="post">
+  <div>
+    <label for="navn">Navn:</label>
+    <input id="navn" type="text" th:field="*{navn}" required>
+  </div>
+
+  <div>
+    <label for="aar">År:</label>
+    <input id="aar" type="number" th:field="*{aar}">
+  </div>
+
+  <div>
+    <label for="startsdato">Startsdato:</label>
+    <input id="startsdato" type="date" th:field="*{startsdato}">
+  </div>
+
+  <div>
+    <label for="slutsdato">Slutsdato:</label>
+    <input id="slutsdato" type="date" th:field="*{slutsdato}">
+  </div>
+
+  <div>
+    <button type="submit">Gem bil</button>
+  </div>
+</form>
+
+<h2>Alle biler</h2>
+<table border="1">
+  <thead>
+  <tr>
+    <th>ID</th>
+    <th>Navn</th>
+    <th>År</th>
+    <th>Startsdato</th>
+    <th>Slutsdato</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr th:each="b : ${biler}">
+    <td th:text="${b.id}"></td>
+    <td th:text="${b.navn}"></td>
+    <td th:text="${b.aar}"></td>
+    <td th:text="${b.startsdato}"></td>
+    <td th:text="${b.slutsdato}"></td>
+  </tr>
+  </tbody>
+</table>
+
+</body>
+</html>

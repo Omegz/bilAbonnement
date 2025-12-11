@@ -3,39 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <title>Biler</title>
+
+  <!-- Enkel styling for at gøre siden mere overskuelig -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+    }
+
+    h1, h2 {
+      color: #333;
+    }
+
+    form div {
+      margin-bottom: 10px;
+    }
+
+    input, button {
+      padding: 6px;
+      font-size: 14px;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin-top: 15px;
+      width: 100%;
+    }
+
+    table, th, td {
+      border: 1px solid #888;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
 </head>
+
 <body>
+
 <h1>Biler</h1>
 
+<!-- Formular til at tilføje en ny bil.
+     th:object binder formularen til et Bil-objekt fra controlleren -->
 <h2>Tilføj bil</h2>
+
 <form th:action="@{/biler}" th:object="${bil}" method="post">
+
+  <!-- Felt for bilens navn -->
   <div>
     <label for="navn">Navn:</label>
     <input id="navn" type="text" th:field="*{navn}" required>
   </div>
 
+  <!-- Felt for årgang -->
   <div>
     <label for="aar">År:</label>
     <input id="aar" type="number" th:field="*{aar}">
   </div>
 
+  <!-- Felt for startdato -->
   <div>
     <label for="startsdato">Startsdato:</label>
     <input id="startsdato" type="date" th:field="*{startsdato}">
   </div>
 
+  <!-- Felt for slutsdato -->
   <div>
     <label for="slutsdato">Slutsdato:</label>
     <input id="slutsdato" type="date" th:field="*{slutsdato}">
   </div>
 
+  <!-- Knap til at gemme bilen -->
   <div>
     <button type="submit">Gem bil</button>
   </div>
 </form>
 
+<!-- Liste over alle biler i databasen.
+     th:each løber gennem listen 'biler' fra controlleren -->
 <h2>Alle biler</h2>
-<table border="1">
+
+<table>
   <thead>
   <tr>
     <th>ID</th>
@@ -45,7 +99,9 @@
     <th>Slutsdato</th>
   </tr>
   </thead>
+
   <tbody>
+  <!-- For hver bil vises dens data i et tabelrække -->
   <tr th:each="b : ${biler}">
     <td th:text="${b.id}"></td>
     <td th:text="${b.navn}"></td>

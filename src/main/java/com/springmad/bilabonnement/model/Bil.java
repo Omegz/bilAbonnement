@@ -7,21 +7,30 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.time.LocalDate;
 
 @Table("biler")
+// Denne klasse repræsenterer tabellen "biler" i databasen.
+// Spring Data JDBC mapper automatisk felterne til kolonner i tabellen.
 public class Bil {
 
     @Id
+    // Primærnøgle i tabellen. Genereres automatisk af databasen.
     private Long id;
 
+    // Navnet på bilen. Mappes direkte til kolonnen "navn".
     private String navn;
 
     @Column("år")
+    // Kolonnenavn i databasen indeholder "å", så vi bruger @Column.
+    // Feltet i Java hedder aar, da "år" ikke er gyldigt som variabelnavn.
     private Integer aar;
 
+    // Startdato for abonnementsperioden.
     private LocalDate startsdato;
 
+    // Slutdato for abonnementsperioden.
     private LocalDate slutsdato;
 
     public Bil() {
+        // Tom konstruktor som kræves af Spring Data JDBC.
     }
 
     public Long getId() {

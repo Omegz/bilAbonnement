@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Kunder</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 30px; }
+    h1, h2 { color: #333; }
+    form div { margin-bottom: 10px; }
+    input, button { padding: 6px; font-size: 14px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+    table, th, td { border: 1px solid #888; }
+    th, td { padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+
+<h1>Kunder</h1>
+
+<h2>Opret kunde</h2>
+<form th:action="@{/kunder}" th:object="${kunde}" method="post">
+  <div>
+    <label for="navn">Navn:</label>
+    <input id="navn" type="text" th:field="*{navn}" required>
+  </div>
+  <div>
+    <label for="email">Email:</label>
+    <input id="email" type="email" th:field="*{email}">
+  </div>
+  <div>
+    <label for="telefon">Telefon:</label>
+    <input id="telefon" type="text" th:field="*{telefon}">
+  </div>
+  <div>
+    <button type="submit">Gem kunde</button>
+  </div>
+</form>
+
+<h2>Alle kunder</h2>
+<table>
+  <thead>
+  <tr>
+    <th>ID</th>
+    <th>Navn</th>
+    <th>Email</th>
+    <th>Telefon</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr th:each="k : ${kunder}">
+    <td th:text="${k.id}"></td>
+    <td th:text="${k.navn}"></td>
+    <td th:text="${k.email}"></td>
+    <td th:text="${k.telefon}"></td>
+  </tr>
+  </tbody>
+</table>
+
+</body>
+</html>

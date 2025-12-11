@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Opret abonnement</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        h1 { color: #333; }
+        form div { margin-bottom: 10px; }
+        input, select, button { padding: 6px; font-size: 14px; }
+        .fejl { color: red; margin-bottom: 15px; }
+        a { text-decoration: none; color: #0066cc; }
+    </style>
+</head>
+<body>
+
+<h1>Opret abonnement</h1>
+
+<!-- Viser fejlbesked hvis der er en -->
+<div th:if="${fejl}" class="fejl" th:text="${fejl}"></div>
+
+<form th:action="@{/abonnementer/opret}" method="post">
+
+    <div>
+        <label for="kundeNavn">Kundenavn:</label>
+        <input id="kundeNavn" name="kundeNavn" type="text" required>
+        <!-- Simpelt: vi bruger kundens navn til opslag -->
+    </div>
+
+    <div>
+        <label for="bilId">Bil:</label>
+        <select id="bilId" name="bilId" required>
+            <option value="">-- vælg bil --</option>
+            <option th:each="b : ${biler}"
+                    th:value="${b.id}"
+                    th:text="${b.navn}"></option>
+        </select>
+    </div>
+
+    <div>
+        <label for="startdato">Startdato:</label>
+        <input id="startdato" name="startdato" type="date" required>
+    </div>
+
+    <div>
+        <label for="slutdato">Slutdato:</label>
+        <input id="slutdato" name="slutdato" type="date">
+    </div>
+
+    <div>
+        <label for="maanedligPris">Månedlig pris:</label>
+        <input id="maanedligPris" name="maanedligPris" type="number" step="0.01" required>
+    </div>
+
+    <div>
+        <button type="submit">Gem abonnement</button>
+    </div>
+</form>
+
+<p>
+    <a th:href="@{/abonnementer}">Tilbage til abonnementsoversigt</a> |
+    <a th:href="@{/kunder}">Gå til kunder</a>
+</p>
+
+</body>
+</html>

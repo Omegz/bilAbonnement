@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Abonnementer</title>
+
+    <!-- Simpel styling for overskuelig tabel -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        table, th, td {
+            border: 1px solid #888;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Abonnementsoversigt</h1>
+
+<!-- Viser resultatet af JOIN mellem abonnementer, kunder og biler -->
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Kunde</th>
+        <th>Bil</th>
+        <th>Startdato</th>
+        <th>Slutdato</th>
+        <th>Månedlig pris</th>
+        <th>Status</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Løkke over alle abonnementer fra controlleren -->
+    <tr th:each="a : ${abonnementer}">
+        <td th:text="${a.abonnementId}"></td>
+        <td th:text="${a.kundeNavn}"></td>
+        <td th:text="${a.bilNavn}"></td>
+        <td th:text="${a.startdato}"></td>
+        <td th:text="${a.slutdato}"></td>
+        <td th:text="${a.maanedligPris}"></td>
+        <td th:text="${a.status}"></td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

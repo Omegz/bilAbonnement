@@ -29,7 +29,7 @@ class AbonnementServiceTest {
     @Test
     void opretAbonnementHvisMuligt_happyFlow() {
         // Arrange
-        String kundeNavn = "Baba";
+        String kundeNavn = "Anders Andersen";
         int bilId = 1;
         LocalDate startdato = LocalDate.of(2025, 1, 1);
         LocalDate slutdato = null;

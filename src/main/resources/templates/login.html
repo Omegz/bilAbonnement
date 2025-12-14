@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        form div { margin-bottom: 10px; }
+        label { display: inline-block; width: 90px; }
+        input, button { padding: 6px; font-size: 14px; }
+        .fejl { color: red; margin-bottom: 10px; }
+        a { color: #0066cc; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<h1>Login (intern)</h1>
+
+<div th:if="${fejl}" class="fejl" th:text="${fejl}"></div>
+
+<form th:action="@{/login}" method="post">
+    <div>
+        <label for="navn">Navn:</label>
+        <input id="navn" name="navn" type="text" required>
+    </div>
+
+    <div>
+        <label for="password">Password:</label>
+        <input id="password" name="password" type="password" required>
+    </div>
+
+    <div>
+        <button type="submit">Log ind</button>
+    </div>
+</form>
+
+<p>
+    Har du ikke en bruger endnu? <a th:href="@{/signup}">Opret bruger</a>
+</p>
+
+</body>
+</html>

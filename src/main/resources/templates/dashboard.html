@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Forretning</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 900px; }
+        .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; }
+        .kpi-title { color: #666; font-size: 13px; margin-bottom: 6px; }
+        .kpi-value { font-size: 28px; font-weight: 700; }
+        .fejl { color: #b00020; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 18px; max-width: 900px; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background: #f6f6f6; text-align: left; }
+        .row { display: flex; gap: 12px; margin-top: 16px; max-width: 900px; }
+        .field { flex: 1; }
+        label { display:block; margin-bottom: 6px; font-weight: 600; }
+        input, button { width: 100%; padding: 8px; font-size: 14px; }
+        button { width: auto; cursor: pointer; }
+        .hint { font-size: 12px; color: #666; margin-top: 6px; }
+    </style>
+</head>
+<body>
+
+<h1>Forretningsdashboard</h1>
+
+<div class="grid">
+    <div class="card">
+        <div class="kpi-title">Antal biler udlejet lige nu (aktive abonnementer)</div>
+        <div class="kpi-value" th:text="${antalAktive}">0</div>
+    </div>
+
+    <div class="card">
+        <div class="kpi-title">Samlet månedlig pris for nuværende udlejede biler</div>
+        <div class="kpi-value" th:text="${samletPris} + ' DKK'">0 DKK</div>
+    </div>
+</div>
+
+<div th:if="${fejl}" class="fejl" th:text="${fejl}"></div>
+
+<!--<form th:action="@{/dashboard/refresh}" method="post">-->
+<!--    <div class="row">-->
+<!--        <div class="field">-->
+<!--            <label for="medarbejderNavn">Medarbejder-navn</label>-->
+<!--            <input id="medarbejderNavn" name="medarbejderNavn" type="text" required>-->
+<!--        </div>-->
+<!--        <div class="field">-->
+<!--            <label for="medarbejderPassword">Medarbejder-password</label>-->
+<!--            <input id="medarbejderPassword" name="medarbejderPassword" type="password" required>-->
+<!--        </div>-->
+<!--        <div style="display:flex; align-items:flex-end;">-->
+<!--            <button type="submit">Opdater</button>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--    <div class="hint">MVP: ekstra kontrol. Kun FORRETNING må se/opdatere dashboard.</div>-->
+<!--</form>-->
+
+<h2>Aktive udlejninger</h2>
+
+<table>
+    <thead>
+    <tr>
+        <th>Abonnement ID</th>
+        <th>Kunde</th>
+        <th>Bil</th>
+        <th>Startdato</th>
+        <th>Slutdato</th>
+        <th>Månedlig pris</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="a : ${aktive}">
+        <td th:text="${a.get('abonnement_id')}"></td>
+        <td th:text="${a.get('kunde_navn')}"></td>
+        <td th:text="${a.get('bil_navn')}"></td>
+        <td th:text="${a.get('startdato')}"></td>
+        <td th:text="${a.get('slutdato')}"></td>
+        <td th:text="${a.get('maanedlig_pris')}"></td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

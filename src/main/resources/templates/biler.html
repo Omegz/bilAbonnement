@@ -1,46 +1,164 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="da">
 <head>
   <meta charset="UTF-8">
   <title>Biler</title>
 
-  <!-- Enkel styling for at gøre siden mere overskuelig -->
+  <!--
+    Dokumentation:
+    - Side til at oprette bil (POST /biler) og vise alle biler (GET /biler).
+    - Form binder til "bil" objektet via th:object.
+    - Tabellen viser listen "biler" fra controller.
+    - Styling: simple cards, inputs og tabel for bedre overblik.
+  -->
+
   <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 30px;
+      margin: 0;
+      background: #f6f7f9;
+      color: #111827;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     }
 
-    h1, h2 {
-      color: #333;
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 22px 16px 60px;
     }
 
-    form div {
-      margin-bottom: 10px;
+    h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 0.2px;
     }
 
-    input, button {
-      padding: 6px;
+    .subtext {
+      margin: 0 0 16px;
+      color: #6b7280;
       font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .card-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid #e5e7eb;
+      background: #ffffff;
+    }
+
+    .card-head h2 {
+      margin: 0;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #374151;
+      font-weight: 900;
+    }
+
+    .card-body {
+      padding: 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      font-size: 13px;
+      color: #374151;
+      font-weight: 800;
+    }
+
+    input {
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+
+    input:focus {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      font-weight: 900;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow: auto;
     }
 
     table {
-      border-collapse: collapse;
-      margin-top: 15px;
       width: 100%;
-    }
-
-    table, th, td {
-      border: 1px solid #888;
+      border-collapse: collapse;
+      min-width: 720px;
     }
 
     th, td {
-      padding: 8px;
+      padding: 12px 12px;
+      border-bottom: 1px solid #e5e7eb;
       text-align: left;
+      font-size: 14px;
+      vertical-align: top;
     }
 
     th {
-      background-color: #f2f2f2;
+      background: #f9fafb;
+      color: #374151;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    tbody tr:hover {
+      background: #f9fafb;
+    }
+
+    .muted {
+      color: #6b7280;
+    }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -48,71 +166,87 @@
 <body>
 <div th:replace="fragments/navbar :: navbar"></div>
 
+<main class="container">
+  <h1>Biler</h1>
+  <p class="subtext">
+    Opret nye biler og se listen over biler i databasen.
+  </p>
 
-<h1>Biler</h1>
+  <section class="grid">
 
-<!-- Formular til at tilføje en ny bil.
-     th:object binder formularen til et Bil-objekt fra controlleren -->
-<h2>Tilføj bil</h2>
+    <!-- Opret bil -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Tilfoej bil</h2>
+      </div>
 
-<form th:action="@{/biler}" th:object="${bil}" method="post">
+      <div class="card-body">
+        <!-- Form binder til Bil-objektet fra controller -->
+        <form th:action="@{/biler}" th:object="${bil}" method="post">
 
-  <!-- Felt for bilens navn -->
-  <div>
-    <label for="navn">Navn:</label>
-    <input id="navn" type="text" th:field="*{navn}" required>
-  </div>
+          <div class="field">
+            <label for="navn">Navn</label>
+            <input id="navn" type="text" th:field="*{navn}" placeholder="Fx Toyota Yaris" required>
+          </div>
 
-  <!-- Felt for årgang -->
-  <div>
-    <label for="aar">År:</label>
-    <input id="aar" type="number" th:field="*{aar}">
-  </div>
+          <div class="field">
+            <label for="aar">Aar</label>
+            <input id="aar" type="number" th:field="*{aar}" placeholder="Fx 2022" min="1900" max="2100">
+          </div>
 
-  <!-- Felt for startdato -->
-  <div>
-    <label for="startsdato">Startsdato:</label>
-    <input id="startsdato" type="date" th:field="*{startsdato}">
-  </div>
+          <div class="field">
+            <label for="startsdato">Startsdato</label>
+            <input id="startsdato" type="date" th:field="*{startsdato}">
+          </div>
 
-  <!-- Felt for slutsdato -->
-  <div>
-    <label for="slutsdato">Slutsdato:</label>
-    <input id="slutsdato" type="date" th:field="*{slutsdato}">
-  </div>
+          <div class="field">
+            <label for="slutsdato">Slutdato</label>
+            <input id="slutsdato" type="date" th:field="*{slutsdato}">
+          </div>
 
-  <!-- Knap til at gemme bilen -->
-  <div>
-    <button type="submit">Gem bil</button>
-  </div>
-</form>
+          <button class="btn btn-primary" type="submit">Gem bil</button>
 
-<!-- Liste over alle biler i databasen.
-     th:each løber gennem listen 'biler' fra controlleren -->
-<h2>Alle biler</h2>
+          <div class="hint">
+            Tip: Start/slutdato kan bruges til intern planlaegning (valgfrit).
+          </div>
+        </form>
+      </div>
+    </div>
 
-<table>
-  <thead>
-  <tr>
-    <th>ID</th>
-    <th>Navn</th>
-    <th>År</th>
-    <th>Startsdato</th>
-    <th>Slutsdato</th>
-  </tr>
-  </thead>
+    <!-- Liste over biler -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Alle biler</h2>
+      </div>
 
-  <tbody>
-  <!-- For hver bil vises dens data i et tabelrække -->
-  <tr th:each="b : ${biler}">
-    <td th:text="${b.id}"></td>
-    <td th:text="${b.navn}"></td>
-    <td th:text="${b.aar}"></td>
-    <td th:text="${b.startsdato}"></td>
-    <td th:text="${b.slutsdato}"></td>
-  </tr>
-  </tbody>
-</table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Navn</th>
+            <th>Aar</th>
+            <th>Startsdato</th>
+            <th>Slutdato</th>
+          </tr>
+          </thead>
+
+          <tbody>
+          <!-- th:each loekker gennem listen 'biler' fra controller -->
+          <tr th:each="b : ${biler}">
+            <td th:text="${b.id}"></td>
+            <td th:text="${b.navn}"></td>
+            <td th:text="${b.aar}" class="muted"></td>
+            <td th:text="${b.startsdato}" class="muted"></td>
+            <td th:text="${b.slutsdato}" class="muted"></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+</main>
 
 </body>
 </html>

@@ -1,71 +1,208 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="da">
 <head>
     <meta charset="UTF-8">
     <title>Abonnementer</title>
 
-    <!-- Simpel styling for overskuelig tabel -->
+    <!--
+      Dokumentation:
+      - Side der viser abonnementsoversigt (JOIN: abonnementer + kunder + biler).
+      - Fokus: overskuelig tabel + status badge + ens spacing.
+      - Navbar kommer fra Thymeleaf fragment.
+    -->
+
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
+            margin: 0;
+            background: #f6f7f9;
+            color: #111827;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 22px 16px 60px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 14px;
         }
 
         h1 {
-            color: #333;
+            margin: 0;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 0.2px;
+        }
+
+        .subtext {
+            margin: 6px 0 0;
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .card-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chip {
+            font-size: 12px;
+            color: #374151;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-weight: 800;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow: auto;
         }
 
         table {
-            border-collapse: collapse;
             width: 100%;
-            margin-top: 15px;
-        }
-
-        table, th, td {
-            border: 1px solid #888;
+            border-collapse: collapse;
+            min-width: 760px;
         }
 
         th, td {
-            padding: 8px;
+            padding: 12px 12px;
             text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            vertical-align: top;
         }
 
         th {
-            background-color: #f2f2f2;
+            background: #f9fafb;
+            color: #374151;
+            font-weight: 900;
+            letter-spacing: 0.02em;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .muted {
+            color: #6b7280;
+        }
+
+        /* Status badges (simpelt) */
+        .badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 900;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .badge-active {
+            background: #ecfdf5;
+            color: #065f46;
+            border-color: #a7f3d0;
+        }
+
+        .badge-finished {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-color: #bfdbfe;
+        }
+
+        .badge-other {
+            background: #f3f4f6;
+            color: #374151;
+            border-color: #e5e7eb;
         }
     </style>
 </head>
 <body>
 <div th:replace="fragments/navbar :: navbar"></div>
 
-<h1>Abonnementsoversigt</h1>
+<main class="container">
 
-<!-- Viser resultatet af JOIN mellem abonnementer, kunder og biler -->
-<table>
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>Kunde</th>
-        <th>Bil</th>
-        <th>Startdato</th>
-        <th>Slutdato</th>
-        <th>Månedlig pris</th>
-        <th>Status</th>
-    </tr>
-    </thead>
-    <tbody>
-    <!-- Løkke over alle abonnementer fra controlleren -->
-    <tr th:each="a : ${abonnementer}">
-        <td th:text="${a.abonnementId}"></td>
-        <td th:text="${a.kundeNavn}"></td>
-        <td th:text="${a.bilNavn}"></td>
-        <td th:text="${a.startdato}"></td>
-        <td th:text="${a.slutdato}"></td>
-        <td th:text="${a.maanedligPris}"></td>
-        <td th:text="${a.status}"></td>
-    </tr>
-    </tbody>
-</table>
+    <div class="page-header">
+        <div>
+            <h1>Abonnementsoversigt</h1>
+            <p class="subtext">
+                Oversigt over lejeaftaler med kunde og bil (JOIN-udtraek).
+            </p>
+        </div>
 
+        <!-- Placeholder chip: du kan senere erstatte med antal fra controller -->
+        <div class="chip">Viser alle abonnementer</div>
+    </div>
+
+    <section class="card">
+        <div class="card-head">
+            <div class="muted">Tip: scroll horisontalt paa sma skærme</div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Kunde</th>
+                    <th>Bil</th>
+                    <th>Startdato</th>
+                    <th>Slutdato</th>
+                    <th>Maanedlig pris</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <!-- th:each loekker gennem listen fra controller -->
+                <tr th:each="a : ${abonnementer}">
+                    <td th:text="${a.abonnementId}"></td>
+                    <td th:text="${a.kundeNavn}"></td>
+                    <td th:text="${a.bilNavn}"></td>
+                    <td th:text="${a.startdato}" class="muted"></td>
+                    <td th:text="${a.slutdato}" class="muted"></td>
+                    <td th:text="${a.maanedligPris}"></td>
+
+                    <!--
+                      Status badge:
+                      - Hvis din status typisk er "AKTIV" / "AFSLUTTET", saa matcher farverne.
+                      - Hvis du har andre navne, vises "other" som neutral.
+                    -->
+                    <td>
+                        <span class="badge badge-active" th:if="${a.status == 'AKTIV'}" th:text="${a.status}"></span>
+                        <span class="badge badge-finished" th:if="${a.status == 'AFSLUTTET'}" th:text="${a.status}"></span>
+                        <span class="badge badge-other" th:unless="${a.status == 'AKTIV' or a.status == 'AFSLUTTET'}" th:text="${a.status}"></span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</main>
 </body>
 </html>
+

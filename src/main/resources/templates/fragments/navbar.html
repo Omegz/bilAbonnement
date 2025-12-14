@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<nav th:fragment="navbar" class="navbar">
+    <div class="nav-container">
+
+        <div class="nav-left">
+            <a class="brand" th:href="@{/}">BilAbonnement</a>
+        </div>
+
+        <div class="nav-links">
+            <a th:href="@{/}">Forside</a>
+            <a th:href="@{/about}">About</a>
+
+            <a th:href="@{/biler}">Biler</a>
+            <a th:href="@{/kunder}">Kunder</a>
+
+            <a th:href="@{/abonnementer}">Abonnementer</a>
+            <a th:href="@{/data/lejeaftale/opret}">Opret lejeaftale</a>
+            <a th:href="@{/skader/opret}">Registrer skade</a>
+
+            <a th:href="@{/dashboard}">Dashboard</a>
+
+            <a th:href="@{/logout}">Log ud</a>
+        </div>
+
+    </div>
+</nav>
+
+<style>
+    .navbar {
+        border-bottom: 1px solid #ddd;
+        padding: 12px 0;
+        margin-bottom: 24px;
+        background: #fff;
+    }
+
+    .nav-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .brand {
+        font-weight: 800;
+        font-size: 18px;
+        text-decoration: none;
+        color: #111;
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .nav-links a {
+        text-decoration: none;
+        color: #222;
+        padding: 6px 10px;
+        border-radius: 6px;
+    }
+
+    .nav-links a:hover {
+        background: #f2f2f2;
+    }
+</style>
+
+</body>
+</html>

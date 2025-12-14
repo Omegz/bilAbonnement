@@ -13,115 +13,204 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
+/*
+ * Controller for skade og udbedring-rollen.
+ *
+ * Denne controller haandterer:
+ *  - Visning af siden til skade-registrering
+ *  - Filtrering paa kunde og abonnement
+ *  - Validering af brugerrolle
+ *  - Oprettelse af en eller flere skader paa en afsluttet lejeaftale
+ *
+ * Controlleren anvender klassisk Spring MVC:
+ *  - @Controller
+ *  - @GetMapping / @PostMapping
+ *  - Model til dataoverfoersel til Thymeleaf
+ *  - HttpSession til simpel login/rollehaandtering
+ */
 @Controller
 @RequestMapping("/skader")
 public class SkadeController {
 
-    private final KundeJdbcRepository kundeJdbcRepository;
-    private final AbonnementJdbcRepository abonnementJdbcRepository;
-    private final SkadeJdbcRepository skadeJdbcRepository;
-    private final BrugerJdbcRepository brugerJdbcRepository;
+    /*
+     * Repositories anvendes til databaseadgang via JDBC.
+     * Hver repository har ansvar for eet domæne.
+     */
+    private final KundeJdbcRepository kunder;
+    private final AbonnementJdbcRepository abonnementer;
+    private final SkadeJdbcRepository skader;
+    private final BrugerJdbcRepository brugere;
 
-    public SkadeController(KundeJdbcRepository kundeJdbcRepository,
-                           AbonnementJdbcRepository abonnementJdbcRepository,
-                           SkadeJdbcRepository skadeJdbcRepository,
-                           BrugerJdbcRepository brugerJdbcRepository) {
-        this.kundeJdbcRepository = kundeJdbcRepository;
-        this.abonnementJdbcRepository = abonnementJdbcRepository;
-        this.skadeJdbcRepository = skadeJdbcRepository;
-        this.brugerJdbcRepository = brugerJdbcRepository;
+    /*
+     * Constructor injection.
+     * Spring indsætter automatisk de nødvendige repositories.
+     */
+    public SkadeController(KundeJdbcRepository kunder,
+                           AbonnementJdbcRepository abonnementer,
+                           SkadeJdbcRepository skader,
+                           BrugerJdbcRepository brugere) {
+        this.kunder = kunder;
+        this.abonnementer = abonnementer;
+        this.skader = skader;
+        this.brugere = brugere;
     }
 
+    /*
+     * GET-endpoint der viser skade-registreringssiden.
+     *
+     * Parametre:
+     *  - kundeId: valgfri, bruges til dropdown-filtrering
+     *  - abonnementId: valgfri, bruges til at vise eksisterende skader
+     *
+     * Flow:
+     *  1) Tjekker om brugeren er logget ind og har korrekt rolle
+     *  2) Henter alle kunder
+     *  3) Henter afsluttede abonnementer (slutdato <= dags dato)
+     *  4) Viser eksisterende skader hvis abonnement er valgt
+     */
     @GetMapping("/opret")
-    public String opretSkadeSide(@RequestParam(value = "kundeId", required = false) Integer kundeId,
-                                 @RequestParam(value = "abonnementId", required = false) Integer abonnementId,
-                                 Model model,
-                                 HttpSession session) {
+    public String visSide(@RequestParam(required = false) Integer kundeId,
+                          @RequestParam(required = false) Integer abonnementId,
+                          Model model,
+                          HttpSession session) {
 
-        if (!erSkadeRolle(session)) {
+        // Adgangskontrol: kun SKADE_OG_UDBEDRING-rollen maa bruge siden
+        if (!harSkadeAdgang(session)) {
             return "redirect:/login";
         }
 
-        model.addAttribute("kunder", kundeJdbcRepository.findAll());
+        // Dropdown med alle kunder
+        model.addAttribute("kunder", kunder.findAll());
         model.addAttribute("selectedKundeId", kundeId);
 
-        // Dropdown med "afsluttede" kontrakter (slutdato <= i dag)
-        model.addAttribute("abonnementer", abonnementJdbcRepository.findAfsluttedeAbonnementer(kundeId));
+        // Dropdown med afsluttede abonnementer (kun dem der maa registreres skader paa)
+        model.addAttribute("abonnementer",
+                abonnementer.findAfsluttedeAbonnementer(kundeId));
         model.addAttribute("selectedAbonnementId", abonnementId);
 
-        // Vis eksisterende skader hvis der er valgt kontrakt
+        // Hvis der er valgt et abonnement, vis allerede registrerede skader
         if (abonnementId != null) {
-            model.addAttribute("skader", skadeJdbcRepository.findSkaderForAbonnement(abonnementId));
+            model.addAttribute("skader",
+                    skader.findSkaderForAbonnement(abonnementId));
         }
 
         return "skader-opret";
     }
 
+    /*
+     * POST-endpoint der gemmer skader i databasen.
+     *
+     * Der kan registreres flere skader paa samme abonnement i eet submit.
+     * Derfor modtages lister af beskrivelser og priser.
+     *
+     * Ekstra sikkerhed:
+     *  - Brugeren skal genindtaste login (svag autentificering)
+     *  - Abonnementet skal vaere afsluttet
+     */
     @PostMapping("/opret")
-    public String gemSkader(@RequestParam("kundeId") Integer kundeId,
-                            @RequestParam("abonnementId") Integer abonnementId,
-                            @RequestParam("beskrivelse") List<String> beskrivelser,
-                            @RequestParam("pris") List<BigDecimal> priser,
-                            @RequestParam("medarbejderNavn") String medarbejderNavn,
-                            @RequestParam("medarbejderPassword") String medarbejderPassword,
-                            Model model,
-                            HttpSession session) {
+    public String gem(@RequestParam Integer kundeId,
+                      @RequestParam Integer abonnementId,
+                      @RequestParam List<String> beskrivelse,
+                      @RequestParam List<BigDecimal> pris,
+                      @RequestParam String medarbejderNavn,
+                      @RequestParam String medarbejderPassword,
+                      Model model,
+                      HttpSession session) {
 
-        if (!erSkadeRolle(session)) {
+        // Session-baseret rollecheck
+        if (!harSkadeAdgang(session)) {
             return "redirect:/login";
         }
 
-        // Ekstra “svag” re-login ved submit
-        Bruger medarbejder = brugerJdbcRepository.findByNavnOgPassword(medarbejderNavn, medarbejderPassword);
-        if (medarbejder == null || !"SKADE_OG_UDBEDRING".equals(medarbejder.getRolle())) {
-            return fejl(model, kundeId, abonnementId, "Du har ikke rettigheder til at registrere skader (forkert rolle/login).");
+        // Svag re-login ved submit (MVP-loesning)
+        Bruger medarbejder =
+                brugere.findByNavnOgPassword(medarbejderNavn, medarbejderPassword);
+
+        if (medarbejder == null ||
+                !"SKADE_OG_UDBEDRING".equals(medarbejder.getRolle())) {
+
+            return fejl(model, kundeId, abonnementId,
+                    "Forkert login eller manglende rettigheder.");
         }
 
-        // Server-side check: kontrakten skal være afsluttet
-        if (!abonnementJdbcRepository.erAbonnementAfsluttet(abonnementId)) {
-            return fejl(model, kundeId, abonnementId, "Du kan kun registrere skader på kontrakter hvor lejeperioden er overstået (slutdato <= i dag).");
+        // Server-side validering:
+        // Skader maa kun registreres paa afsluttede abonnementer
+        if (!abonnementer.erAbonnementAfsluttet(abonnementId)) {
+            return fejl(model, kundeId, abonnementId,
+                    "Du kan kun registrere skader paa afsluttede abonnementer.");
         }
 
-        // Valider liste input (MVP)
-        if (beskrivelser == null || priser == null || beskrivelser.size() != priser.size() || beskrivelser.isEmpty()) {
-            return fejl(model, kundeId, abonnementId, "Du skal tilføje mindst én skade med beskrivelse og pris.");
+        // Validerer at der findes mindst een skade,
+        // og at alle beskrivelser og priser er gyldige
+        if (!gyldigSkadeliste(beskrivelse, pris)) {
+            return fejl(model, kundeId, abonnementId,
+                    "Alle skader skal have beskrivelse og positiv pris.");
         }
+
+        // Gemmer skaderne i databasen
+        // (een raekke pr. skade)
+        skader.opretSkader(abonnementId, beskrivelse, pris);
+
+        // Redirect for at undgaa dobbelt-submit
+        return "redirect:/skader/opret?kundeId=" + kundeId +
+                "&abonnementId=" + abonnementId;
+    }
+
+    /* -------------------- Hjælpe-metoder -------------------- */
+
+    /*
+     * Tjekker om den nuvaerende session indeholder
+     * en bruger med korrekt rolle.
+     */
+    private boolean harSkadeAdgang(HttpSession session) {
+        Object user = session.getAttribute("loggedInUser");
+        return user instanceof Bruger &&
+                "SKADE_OG_UDBEDRING".equals(((Bruger) user).getRolle());
+    }
+
+    /*
+     * Validerer input fra formularen.
+     * Alle skader skal:
+     *  - Have en beskrivelse
+     *  - Have en pris > 0
+     *  - Have matchende antal felter
+     */
+    private boolean gyldigSkadeliste(List<String> beskrivelser,
+                                     List<BigDecimal> priser) {
+
+        if (beskrivelser == null || priser == null) return false;
+        if (beskrivelser.isEmpty()) return false;
+        if (beskrivelser.size() != priser.size()) return false;
 
         for (int i = 0; i < beskrivelser.size(); i++) {
-            String b = beskrivelser.get(i);
-            BigDecimal p = priser.get(i);
-
-            if (b == null || b.isBlank()) {
-                return fejl(model, kundeId, abonnementId, "Skade-beskrivelse må ikke være tom.");
-            }
-            if (p == null || p.signum() <= 0) {
-                return fejl(model, kundeId, abonnementId, "Pris pr. skade skal være et positivt tal.");
-            }
+            if (beskrivelser.get(i).isBlank()) return false;
+            if (priser.get(i) == null || priser.get(i).signum() <= 0) return false;
         }
-
-        // Gem skader (én DB-række pr. skade)
-        skadeJdbcRepository.opretSkader(abonnementId, beskrivelser, priser);
-
-        // Redirect tilbage til samme side så du kan se listen
-        return "redirect:/skader/opret?kundeId=" + kundeId + "&abonnementId=" + abonnementId;
+        return true;
     }
 
-    private String fejl(Model model, Integer kundeId, Integer abonnementId, String besked) {
+    /*
+     * Genopbygger modellen ved fejl,
+     * saa brugeren forbliver paa samme side
+     * med dropdowns og allerede registrerede skader.
+     */
+    private String fejl(Model model,
+                        Integer kundeId,
+                        Integer abonnementId,
+                        String besked) {
+
         model.addAttribute("fejl", besked);
-        model.addAttribute("kunder", kundeJdbcRepository.findAll());
+        model.addAttribute("kunder", kunder.findAll());
         model.addAttribute("selectedKundeId", kundeId);
-        model.addAttribute("abonnementer", abonnementJdbcRepository.findAfsluttedeAbonnementer(kundeId));
+        model.addAttribute("abonnementer",
+                abonnementer.findAfsluttedeAbonnementer(kundeId));
         model.addAttribute("selectedAbonnementId", abonnementId);
-        if (abonnementId != null) {
-            model.addAttribute("skader", skadeJdbcRepository.findSkaderForAbonnement(abonnementId));
-        }
-        return "skader-opret";
-    }
 
-    private boolean erSkadeRolle(HttpSession session) {
-        Object obj = session.getAttribute("loggedInUser");
-        if (!(obj instanceof Bruger)) return false;
-        Bruger b = (Bruger) obj;
-        return "SKADE_OG_UDBEDRING".equals(b.getRolle());
+        if (abonnementId != null) {
+            model.addAttribute("skader",
+                    skader.findSkaderForAbonnement(abonnementId));
+        }
+
+        return "skader-opret";
     }
 }

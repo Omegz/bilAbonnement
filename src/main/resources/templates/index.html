@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="da" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>BilAbonnement - Forside</title>
+
+    <!--
+      Dokumentation:
+      - Simpel landing page til internt system.
+      - Bruger internet-billede som baggrund (ingen lokal hero.jpg).
+      - Tre genveje til de vigtigste funktioner.
+      - Ingen danske bogstaver i kommentarerne.
+    -->
+
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: #f6f7f9;
+            color: #111827;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 22px 16px 60px;
+        }
+
+        .header {
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .header-hero {
+            padding: 26px;
+            color: #ffffff;
+            background:
+                    linear-gradient(90deg, rgba(17,24,39,0.85), rgba(17,24,39,0.35)),
+                    url("https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1400&q=70");
+            background-size: cover;
+            background-position: center;
+        }
+
+        .header-hero h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        .header-hero p {
+            margin: 0;
+            max-width: 720px;
+            color: rgba(255,255,255,0.9);
+            line-height: 1.5;
+        }
+
+        .actions {
+            margin-top: 14px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .btn-ghost {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+
+        .grid {
+            margin-top: 18px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .card h3 {
+            margin: 0 0 8px;
+            font-size: 16px;
+        }
+
+        .card p {
+            margin: 0 0 12px;
+            color: #4b5563;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .card a {
+            color: #2563eb;
+            font-weight: 800;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+
+    </style>
+</head>
+<body>
+
+<div th:replace="fragments/navbar :: navbar"></div>
+
+<main class="container">
+
+    <section class="header">
+        <div class="header-hero">
+            <h1>Internt system til BilAbonnement</h1>
+            <p>
+                Registrer lejeaftaler, haandter skader og faa overblik via dashboard.
+                Systemet er lavet til medarbejdere (dataregistrering, skade og forretning).
+            </p>
+
+            <div class="actions">
+                <a class="btn btn-primary" href="/data/lejeaftale/opret">Opret lejeaftale</a>
+                <a class="btn btn-ghost" href="/skader/opret">Registrer skade</a>
+                <a class="btn btn-ghost" href="/dashboard">Dashboard</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid">
+        <div class="card">
+            <h3>Dataregistrering</h3>
+            <p>Opret nye lejeaftaler med kunde, bil og datoer.</p>
+            <a href="/data/lejeaftale/opret">Gaa til opret lejeaftale -></a>
+        </div>
+
+        <div class="card">
+            <h3>Skade og udbedring</h3>
+            <p>Registrer fejl/mangler paa afsluttede aftaler og pris pr. skade.</p>
+            <a href="/skader/opret">Gaa til skader -></a>
+        </div>
+
+        <div class="card">
+            <h3>Forretning</h3>
+            <p>Se antal udlejede biler og samlet maanedlig pris.</p>
+            <a href="/dashboard">Gaa til dashboard -></a>
+        </div>
+    </section>
+
+</main>
+
+</body>
+</html>

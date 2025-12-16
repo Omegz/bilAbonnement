@@ -95,41 +95,6 @@ public class AbonnementJdbcRepository {
     }
 
 
-    public void opretLejeaftaleMedDetaljer(String kundeNavn,
-                                           int bilId,
-                                           java.time.LocalDate startdato,
-                                           java.time.LocalDate slutdato,
-                                           java.math.BigDecimal maanedligPris,
-                                           String kontraktType,
-                                           int kontraktVarighedDage,
-                                           String udleveringsstedType,
-                                           String leveringsform) {
-
-        // Find kunde-id ud fra navn (MVP)
-        String findKundeSql = "SELECT id FROM kunder WHERE navn = ?";
-        Integer kundeId = jdbcTemplate.queryForObject(findKundeSql, Integer.class, kundeNavn);
-
-        String insertSql = """
-            INSERT INTO abonnementer
-            (bil_id, kunde_id, startdato, slutdato, maanedlig_pris, status,
-             kontrakt_type, kontrakt_varighed_dage, udleveringssted_type, leveringsform)
-            VALUES
-            (?, ?, ?, ?, ?, 'AKTIV', ?, ?, ?, ?)
-            """;
-
-        jdbcTemplate.update(insertSql,
-                bilId,
-                kundeId,
-                startdato,
-                slutdato,
-                maanedligPris,
-                kontraktType,
-                kontraktVarighedDage,
-                udleveringsstedType,
-                leveringsform
-        );
-    }
-
     public void opretLejeaftaleMedDetaljerKundeId(int kundeId,
                                                   int bilId,
                                                   java.time.LocalDate startdato,
@@ -165,20 +130,24 @@ public class AbonnementJdbcRepository {
 
 
     // Henter afsluttede abonnementer (slutdato <= i dag) – kan filtreres på kunde.
-    public java.util.List<com.springmad.bilabonnement.model.AbonnementOption> findAfsluttedeAbonnementer(Integer kundeId) {
+    public List<com.springmad.bilabonnement.model.AbonnementOption> findAfsluttedeAbonnementer(Integer kundeId) {
 
         String baseSql = """
-        SELECT a.id AS abonnementId, k.navn AS kundeNavn, b.navn AS bilNavn, a.slutdato AS slutdato
+        SELECT a.id AS abonnementId,
+               k.navn AS kundeNavn,
+               b.navn AS bilNavn,
+               a.slutdato AS slutdato
         FROM abonnementer a
         JOIN kunder k ON a.kunde_id = k.id
         JOIN biler b ON a.bil_id = b.id
         WHERE a.slutdato IS NOT NULL
-          AND a.slutdato <= ?
+          AND a.slutdato <= CURDATE()
         """;
 
-        java.util.List<Object> params = new java.util.ArrayList<>();
-        params.add(java.sql.Date.valueOf(java.time.LocalDate.now()));
+        // Liste til valgfrie parametre (kun kundeId)
+        List<Object> params = new java.util.ArrayList<>();
 
+        // Hvis der er valgt kunde, filtrer paa kunde
         if (kundeId != null) {
             baseSql += " AND a.kunde_id = ? ";
             params.add(kundeId);
@@ -186,13 +155,16 @@ public class AbonnementJdbcRepository {
 
         baseSql += " ORDER BY a.slutdato DESC";
 
-        return jdbcTemplate.query(baseSql, (rs, rowNum) ->
-                new com.springmad.bilabonnement.model.AbonnementOption(
+        return jdbcTemplate.query(
+                baseSql,
+                (rs, rowNum) -> new com.springmad.bilabonnement.model.AbonnementOption(
                         rs.getInt("abonnementId"),
                         rs.getString("kundeNavn"),
                         rs.getString("bilNavn"),
                         rs.getDate("slutdato").toLocalDate()
-                ), params.toArray());
+                ),
+                params.toArray()
+        );
     }
 
     // Bruges til server-side validering: må vi oprette skade på denne kontrakt?
@@ -202,12 +174,10 @@ public class AbonnementJdbcRepository {
         FROM abonnementer
         WHERE id = ?
           AND slutdato IS NOT NULL
-          AND slutdato <= ?
+          AND slutdato <= CURDATE()
         """;
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class,
-                abonnementId,
-                java.sql.Date.valueOf(java.time.LocalDate.now())
-        );
+
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, abonnementId);
         return count != null && count > 0;
     }
 

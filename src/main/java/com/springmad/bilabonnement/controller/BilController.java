@@ -1,10 +1,10 @@
-//     Denne controller er lavet separat fra PageController, fordi
-//        bil-funktionalitet er en selvstændig del af applikationen, der
-//             håndterer data (CRUD-lignende operationer) og derfor naturligt
-//             skal ligge i sin egen controller.
-//        PageController bruges kun til statiske sider som index og about, mens
-//             BilController håndterer databasekald, formularer og visning af
-//             data for biler.
+// PageController bruges kun til simple, statiske sider
+// (fx index og about), mens BilController haandterer
+// funktionalitet med databaseadgang, formularer og visning
+// af data relateret til biler.
+//
+// Dette foelger MVC-princippet, hvor hver controller
+// har et klart ansvarsomraade.
 
 package com.springmad.bilabonnement.controller;
 
@@ -17,34 +17,52 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-// Controlleren styrer alle HTTP-forespørgsler under /biler.
+// Marker klassen som en Spring MVC controller.
 @Controller
+// Alle endpoints i denne controller starter med /biler.
 @RequestMapping("/biler")
 public class BilController {
 
     private final BilRepository bilRepository;
+    // Dependency: BilRepository bruges til at tilgaa tabellen "biler" i databasen.
+    // Repository'et indeholder CRUD-funktionalitet via Spring Data.
 
-    // Repository’et injiceres via constructor injection, så controlleren kan hente og gemme biler i databasen.
+    // Constructor injection: Spring injicerer BilRepository automatisk.
     public BilController(BilRepository bilRepository) {
         this.bilRepository = bilRepository;
+        // Gemmer repository-referencen, saa controlleren kan bruge den i endpoints.
     }
 
-//    Når brugeren går til /biler, oprettes en tom Bil-instans til formularen, og
-//    alle biler hentes fra databasen og sendes til Thymeleaf-skabelonen
-//    biler.html.
+    // Endpoint: GET /biler
+    // Viser oversigten over alle biler samt en formular til at oprette en ny bil.
     @GetMapping
     public String bilerPage(Model model) {
+
+        // Tilfoejer en tom Bil-instans til modellen.
+        // Denne bruges af Thymeleaf-formularen til data-binding.
         model.addAttribute("bil", new Bil());
+
+        // Henter alle biler fra databasen og sender dem til viewet.
+        // bruges til at vise en tabel med eksisterende biler.
         model.addAttribute("biler", bilRepository.findAll());
+
         return "biler";
+        // Returnerer view-navn: templates/biler.html
     }
-//
-//    Når formularen indsendes, modtager controlleren et Bil-objekt, gemmer
-//    det i databasen og redirecter tilbage til bil-oversigten.
-//
+
+    // Endpoint: POST /biler
+    // Kaldes naar formularen til oprettelse af bil indsendes.
     @PostMapping
     public String createBil(@ModelAttribute("bil") Bil bil) {
+        // @ModelAttribute binder formularfelter direkte til Bil-objektet.
+
+        // Gemmer bilen i databasen.
+        // save() er en standard CRUD-metode fra CrudRepository.
         bilRepository.save(bil);
+
         return "redirect:/biler";
+        // Redirect bruges for at:
+        // - undgaa dobbelt-submit ved refresh
+        // - opdatere listen over biler efter oprettelse
     }
 }

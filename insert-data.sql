@@ -1,35 +1,75 @@
--- INSERT script til bil-abonnement system
--- Sørg for at køre: USE bil_db; før du kører dette.
-
 USE bil_db;
 
--- Indsæt eksempeldata i kunder
+-- =========================
+-- BILER
+-- =========================
+INSERT INTO biler (navn, aar, startsdato, slutsdato) VALUES
+                                                         ('VW Golf', 2022, '2024-01-01', NULL),
+                                                         ('Tesla Model 3', 2023, '2024-02-01', NULL),
+                                                         ('BMW i4', 2021, '2023-11-15', NULL),
+                                                         ('Audi A4', 2020, '2023-10-01', NULL);
+
+-- =========================
+-- KUNDER
+-- =========================
 INSERT INTO kunder (navn, email, telefon) VALUES
-                                              ('Anders Andersen', 'anders@example.com', '11111111'),
-                                              ('Birgitte Biler', 'birgitte@example.com', '22222222'),
-                                              ('Carl Kunde', 'carl@example.com', '33333333');
+                                              ('Anders Jensen', 'anders@mail.dk', '20112233'),
+                                              ('Maria Hansen', 'maria@mail.dk', '22334455'),
+                                              ('Peter Nielsen', 'peter@mail.dk', '44556677');
 
--- Indsæt eksempeldata i biler
-INSERT INTO biler (navn, `år`, startsdato, slutsdato) VALUES
-                                                          ('Toyota Corolla', 2020, '2024-01-01', '2024-12-31'),
-                                                          ('Volkswagen Golf', 2019, '2024-03-01', '2024-09-30'),
-                                                          ('Tesla Model 3', 2022, '2024-05-15', NULL);
+-- =========================
+-- BRUGERE (interne roller)
+-- =========================
+INSERT INTO brugere (navn, alder, rolle, password) VALUES
+                                                       ('data1', 28, 'DATAREGISTRERING', '1234'),
+                                                       ('skade1', 35, 'SKADE_OG_UDBEDRING', '1234'),
+                                                       ('forretning1', 42, 'FORRETNING', '1234');
 
--- Nu antager vi:
--- 1) kunder.id = 1,2,3 i samme rækkefølge som ovenfor
--- 2) biler.id = 1,2,3 i samme rækkefølge som ovenfor
+-- =========================
+-- ABONNEMENTER / LEJEAFTALER
+-- =========================
+-- Aktiv LIMITED kontrakt
+INSERT INTO abonnementer (
+    bil_id, kunde_id, startdato, slutdato,
+    maanedlig_pris, status,
+    kontrakt_type, kontrakt_varighed_dage,
+    udleveringssted_type, leveringsform, leveringsadresse
+) VALUES (
+             1, 1, '2024-10-01', '2025-03-01',
+             3499.00, 'AKTIV',
+             'LIMITED', 150,
+             'BILABONNEMENT', 'AFHENTNING', NULL
+         );
 
--- Indsæt eksempeldata i abonnementer
-INSERT INTO abonnementer (bil_id, kunde_id, startdato, slutdato, maanedlig_pris, status) VALUES
-                                                                                             -- Aktivt abonnement til Anders på Toyota
-                                                                                             (1, 1, '2025-01-01', NULL, 2999.00, 'AKTIV'),
-                                                                                             -- Afsluttet abonnement til Birgitte på Golf
-                                                                                             (2, 2, '2024-01-01', '2024-12-31', 2599.00, 'AFSLUTTET'),
-                                                                                             -- Aktivt abonnement til Carl på Tesla
-                                                                                             (3, 3, '2025-02-01', NULL, 3999.00, 'AKTIV');
+-- Aktiv UNLIMITED kontrakt
+INSERT INTO abonnementer (
+    bil_id, kunde_id, startdato, slutdato,
+    maanedlig_pris, status,
+    kontrakt_type, kontrakt_varighed_dage,
+    udleveringssted_type, leveringsform, leveringsadresse
+) VALUES (
+             2, 2, '2024-06-01', '2025-06-01',
+             4299.00, 'AKTIV',
+             'UNLIMITED', 365,
+             'FDM', 'LEVERING', 'Roskildevej 12, 4000 Roskilde'
+         );
 
--- Indsæt eksempeldata i skader
-INSERT INTO skader (bil_id, beskrivelse, registreret_dato, pris_estimat) VALUES
-                                                                             (1, 'Ridse i højre dør', '2024-06-10', 1500.00),
-                                                                             (2, 'Stenslag i forrude', '2024-07-21', 2200.00),
-                                                                             (3, 'P-skade på bagkofanger', '2024-09-05', 3800.00);
+-- Afsluttet kontrakt (bruges til skader)
+INSERT INTO abonnementer (
+    bil_id, kunde_id, startdato, slutdato,
+    maanedlig_pris, status,
+    kontrakt_type, kontrakt_varighed_dage,
+    udleveringssted_type, leveringsform, leveringsadresse
+) VALUES (
+             3, 3, '2024-01-01', '2024-09-01',
+             3999.00, 'AFSLUTTET',
+             'LIMITED', 240,
+             'DS', 'AFHENTNING', NULL
+         );
+
+-- =========================
+-- SKADER (kun paa afsluttede abonnementer)
+-- =========================
+INSERT INTO skader (abonnement_id, beskrivelse, pris, oprettet_dato) VALUES
+                                                                         (3, 'Ridse i venstre doer', 2500.00, CURDATE()),
+                                                                         (3, 'Slidte daek', 1800.00, CURDATE());

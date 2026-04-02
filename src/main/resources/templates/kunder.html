@@ -63,7 +63,7 @@
         <td>
           <!-- <a> er et inline-element (fylder kun sin teksts bredde, starter ikke ny linje).
                Slet-link bruger @PathVariable: /kunder/slet/{id} -->
-          <a th:href="@{/kunder/slet/{id}(id=${k.id})}">Slet</a>
+          <a th:href="@{/kunder/slet/{id}(id=${k.id})}" class="link-danger">Slet</a>
         </td>
       </tr>
       </tbody>

@@ -10,7 +10,10 @@
 <body>
 <div th:replace="fragments/navbar :: navbar"></div>
 
+<main class="container">
+
 <h1>Dataregistrering: Opret lejeaftale</h1>
+<p class="subtext">Udfyld formularen for at oprette en ny lejeaftale.</p>
 
 <div class="card-elevated card-animated card-padded">
   <div th:if="${fejl}" class="fejl" th:text="${fejl}"></div>
@@ -121,6 +124,8 @@
 
   </form>
 </div>
+
+</main>
 
 <script>
   const leveringsform = document.getElementById('leveringsform');

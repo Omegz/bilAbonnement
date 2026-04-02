@@ -5,48 +5,52 @@
   <title>Signup</title>
   <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
+<body class="page-body-gradient">
 <div th:replace="fragments/navbar :: navbar"></div>
 
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <h1>Opret bruger (intern)</h1>
+        <p class="subtext">Opret en medarbejderkonto for at bruge systemet.</p>
 
-<h1>Opret bruger (intern)</h1>
+        <div th:if="${fejl}" class="fejl" th:text="${fejl}"></div>
 
-<div th:if="${fejl}" class="fejl" th:text="${fejl}"></div>
+        <form th:action="@{/signup}" th:object="${bruger}" method="post">
+          <div class="field">
+            <label for="navn">Navn</label>
+            <input id="navn" type="text" th:field="*{navn}" required>
+          </div>
 
-<form th:action="@{/signup}" th:object="${bruger}" method="post">
-  <div>
-    <label for="navn">Navn:</label>
-    <input id="navn" type="text" th:field="*{navn}" required>
-  </div>
+          <div class="field">
+            <label for="alder">Alder</label>
+            <input id="alder" type="number" th:field="*{alder}" required>
+          </div>
 
-  <div>
-    <label for="alder">Alder:</label>
-    <input id="alder" type="number" th:field="*{alder}" required>
-  </div>
+          <div class="field">
+            <label for="rolle">Rolle</label>
+            <select id="rolle" th:field="*{rolle}" required>
+              <option value="">-- vælg rolle --</option>
+              <option value="DATAREGISTRERING">Dataregistrering</option>
+              <option value="SKADE_OG_UDBEDRING">Skade og udbedring</option>
+              <option value="FORRETNING">Forretningsudvikler</option>
+            </select>
+          </div>
 
-  <div>
-    <label for="rolle">Rolle:</label>
-    <select id="rolle" th:field="*{rolle}" required>
-      <option value="">-- vælg rolle --</option>
-      <option value="DATAREGISTRERING">Dataregistrering</option>
-      <option value="SKADE_OG_UDBEDRING">Skade og udbedring</option>
-      <option value="FORRETNING">Forretningsudvikler</option>
-    </select>
-  </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" th:field="*{password}" required>
+          </div>
 
-  <div>
-    <label for="password">Password:</label>
-    <input id="password" type="password" th:field="*{password}" required>
-  </div>
+          <div>
+            <button type="submit">Opret bruger</button>
+          </div>
+        </form>
 
-  <div>
-    <button type="submit">Opret bruger</button>
-  </div>
-</form>
-
-<p>
-  Har du allerede en bruger? <a th:href="@{/login}">Log ind</a>
-</p>
+        <p>
+          Har du allerede en bruger? <a th:href="@{/login}">Log ind</a>
+        </p>
+    </div>
+</div>
 
 </body>
 </html>

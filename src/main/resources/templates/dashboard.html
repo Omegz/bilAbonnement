@@ -10,7 +10,10 @@
 <body class="page-body-gradient">
 <div th:replace="fragments/navbar :: navbar"></div>
 
+<main class="container">
+
 <h1>Forretningsdashboard</h1>
+<p class="subtext">Overblik over aktive udlejninger og samlet omsaetning.</p>
 
 <div class="grid-2">
     <div class="kpi-card">
@@ -25,23 +28,6 @@
 </div>
 
 <div th:if="${fejl}" class="fejl" th:text="${fejl}"></div>
-
-<!--<form th:action="@{/dashboard/refresh}" method="post">-->
-<!--    <div class="row">-->
-<!--        <div class="field">-->
-<!--            <label for="medarbejderNavn">Medarbejder-navn</label>-->
-<!--            <input id="medarbejderNavn" name="medarbejderNavn" type="text" required>-->
-<!--        </div>-->
-<!--        <div class="field">-->
-<!--            <label for="medarbejderPassword">Medarbejder-password</label>-->
-<!--            <input id="medarbejderPassword" name="medarbejderPassword" type="password" required>-->
-<!--        </div>-->
-<!--        <div style="display:flex; align-items:flex-end;">-->
-<!--            <button type="submit">Opdater</button>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--    <div class="hint">MVP: ekstra kontrol. Kun FORRETNING må se/opdatere dashboard.</div>-->
-<!--</form>-->
 
 <h2>Aktive udlejninger</h2>
 
@@ -67,6 +53,8 @@
     </tr>
     </tbody>
 </table>
+
+</main>
 
 </body>
 </html>

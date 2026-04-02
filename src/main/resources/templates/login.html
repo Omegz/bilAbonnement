@@ -9,29 +9,34 @@
 <body class="page-body-gradient">
 <div th:replace="fragments/navbar :: navbar"></div>
 
-<h1>Login (intern)</h1>
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <h1>Login (intern)</h1>
+        <p class="subtext">Log ind med dit medarbejder-login.</p>
 
-<div th:if="${fejl}" class="fejl" th:text="${fejl}"></div>
+        <div th:if="${fejl}" class="fejl" th:text="${fejl}"></div>
 
-<form th:action="@{/login}" method="post">
-    <div>
-        <label for="navn">Navn:</label>
-        <input id="navn" name="navn" type="text" required>
+        <form th:action="@{/login}" method="post">
+            <div class="field">
+                <label for="navn">Navn</label>
+                <input id="navn" name="navn" type="text" required>
+            </div>
+
+            <div class="field">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" required>
+            </div>
+
+            <div>
+                <button type="submit">Log ind</button>
+            </div>
+        </form>
+
+        <p>
+            Har du ikke en bruger endnu? <a th:href="@{/signup}">Opret bruger</a>
+        </p>
     </div>
-
-    <div>
-        <label for="password">Password:</label>
-        <input id="password" name="password" type="password" required>
-    </div>
-
-    <div>
-        <button type="submit">Log ind</button>
-    </div>
-</form>
-
-<p>
-    Har du ikke en bruger endnu? <a th:href="@{/signup}">Opret bruger</a>
-</p>
+</div>
 
 </body>
 </html>

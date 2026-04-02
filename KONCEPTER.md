@@ -235,41 +235,70 @@ Ligger i `src/main/resources/application.properties`.
 
 ```properties
 spring.application.name=bilAbonnement
+
+# PORT har en fallback (9091) fordi porten ikke er foelsom data.
 server.port=${PORT:9091}
-spring.datasource.url=${SPRING_DATASOURCE_URL:...}
-spring.datasource.username=${SPRING_DATASOURCE_USERNAME:...}
-spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:...}
+
+# Database-credentials har INGEN fallback — de SKAL komme fra .env filen.
+# Passwords maa aldrig staa hardcodet i application.properties.
+spring.datasource.url=${SPRING_DATASOURCE_URL}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
+
+# Driveren er ikke foelsom, saa den staar direkte her.
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 ```
 
-| Indstilling | Hvad den goer |
-|---|---|
-| `server.port` | Hvilken port serveren lytter paa (default 9091) |
-| `spring.datasource.url` | URL til databasen (TiDB/MySQL) |
-| `spring.datasource.username` | Brugernavn til databasen |
-| `spring.datasource.password` | Password til databasen |
-| `spring.datasource.driver-class-name` | Hvilken database-driver der bruges |
+| Indstilling | Hvad den goer | Foelsom? |
+|---|---|---|
+| `server.port` | Hvilken port serveren lytter paa (default 9091) | Nej — har fallback |
+| `spring.datasource.url` | URL til databasen (TiDB/MySQL) | Ja — fra .env |
+| `spring.datasource.username` | Brugernavn til databasen | Ja — fra .env |
+| `spring.datasource.password` | Password til databasen | Ja — fra .env |
+| `spring.datasource.driver-class-name` | Hvilken database-driver der bruges | Nej — staar direkte |
 
-### Environment Variables (Miljovariabler)
+### Environment Variables (Miljoevariabler)
 
 System-variabler der laeses af applikationen under koersel.
-Ligger i `.env` filen og holdes **udenfor koden**.
+Ligger i `.env` filen som er i `.gitignore` og **aldrig committes til Git**.
 
 ```
-SPRING_DATASOURCE_URL=jdbc:mysql://...
-SPRING_DATASOURCE_USERNAME=...
-SPRING_DATASOURCE_PASSWORD=...
+# .env filen (holdes lokalt, aldrig i Git)
+SPRING_DATASOURCE_URL=jdbc:mysql://gateway01.eu-central-1.prod.aws.tidbcloud.com:4000/bil_db?sslMode=VERIFY_IDENTITY
+SPRING_DATASOURCE_USERNAME=dit_brugernavn
+SPRING_DATASOURCE_PASSWORD=dit_password
 ```
+
+### Syntaksen: `${ENV_VAR}` og `${ENV_VAR:fallback}`
+
+```
+${PORT:9091}              -> brug PORT hvis sat, ellers 9091 (MED fallback)
+${SPRING_DATASOURCE_URL}  -> brug variablen, fejl hvis den ikke er sat (UDEN fallback)
+```
+
+**Regel:** Foelsomme data (passwords, brugernavne) skal ALDRIG have en fallback-vaerdi,
+fordi fallback-vaerdien staar i `application.properties` som committes til Git.
 
 ### Hvorfor bruger vi begge?
 
 | Formaal | Forklaring |
 |---|---|
-| Adskille kode og konfiguration | Passwords staar ikke i Java-koden |
+| Adskille kode og konfiguration | Passwords staar i .env, ikke i Java-koden eller application.properties |
 | Fleksibilitet paa forskellige miljoer | Lokal udvikling bruger port 9091, produktion bruger en anden |
-| Beskytte foelsomme data | Passwords og noegler skal aldrig hardcodes |
+| Beskytte foelsomme data | .env er i .gitignore — passwords og noegler committes aldrig |
 
-`${PORT:9091}` betyder: brug miljovariablen PORT hvis den er sat, ellers brug 9091.
+### Hvad goer .gitignore?
+
+`.gitignore` filen fortaeller Git hvilke filer der IKKE skal committes:
+
+```
+# Fra vores .gitignore:
+.env
+.env.*
+*.env
+```
+
+Det betyder at `.env` aldrig bliver pushet til GitHub, selv hvis den ligger i projektmappen.
 
 ---
 

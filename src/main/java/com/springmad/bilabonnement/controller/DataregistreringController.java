@@ -2,6 +2,7 @@ package com.springmad.bilabonnement.controller;
 
 import com.springmad.bilabonnement.model.Bruger;
 import com.springmad.bilabonnement.model.LejeaftaleForm;
+import com.springmad.bilabonnement.model.RolleDefinitioner;
 import com.springmad.bilabonnement.repository.AbonnementJdbcRepository;
 import com.springmad.bilabonnement.repository.BilRepository;
 import com.springmad.bilabonnement.repository.BrugerJdbcRepository;
@@ -89,7 +90,9 @@ public class DataregistreringController {
         );
 
         // Kontrollere at brugeren findes og har korrekt rolle.
-        if (medarbejder == null || !"DATAREGISTRERING".equals(medarbejder.getRolle())) {
+        // Singleton: vi henter rollen fra RolleDefinitioner i stedet for at hardcode strengen.
+        // getInstance() returnerer altid den SAMME instans (Singleton pattern).
+        if (medarbejder == null || !RolleDefinitioner.getInstance().getRolleDataregistrering().equals(medarbejder.getRolle())) {
             return fejl(model, "Du har ikke rettigheder til at registrere lejeaftaler (forkert rolle/login).");
         }
 
@@ -117,14 +120,15 @@ public class DataregistreringController {
 
         // Kontrakt-type: hvis intet er valgt, bruger vi standard LIMITED.
         // Dette goer at systemet stadig virker selv ved manglende input.
+        // Singleton: kontrakttypen hentes fra RolleDefinitioner saa vi undgaar stavefejl.
         String kontraktType = (form.getKontraktType() == null || form.getKontraktType().isBlank())
-                ? "LIMITED" : form.getKontraktType();
+                ? RolleDefinitioner.getInstance().getKontraktLimited() : form.getKontraktType();
 
         // Kontraktregler (MVP) ud fra opgaven:
         // - Limited = fast periode (150 dage)
         // - Unlimited = variabel periode (90-1080 dage)
         int varighed;
-        if ("LIMITED".equals(kontraktType)) {
+        if (RolleDefinitioner.getInstance().getKontraktLimited().equals(kontraktType)) {
             varighed = 150;
         } else {
             varighed = (form.getKontraktVarighedDage() == null) ? 90 : form.getKontraktVarighedDage();
@@ -197,6 +201,7 @@ public class DataregistreringController {
         Object obj = session.getAttribute("loggedInUser");
         if (!(obj instanceof Bruger)) return false;
         Bruger b = (Bruger) obj;
-        return "DATAREGISTRERING".equals(b.getRolle());
+        // Singleton: vi sammenligner med rollen fra den ene instans af RolleDefinitioner.
+        return RolleDefinitioner.getInstance().getRolleDataregistrering().equals(b.getRolle());
     }
 }

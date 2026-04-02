@@ -1,6 +1,7 @@
 package com.springmad.bilabonnement.controller;
 
 import com.springmad.bilabonnement.model.Bruger;
+import com.springmad.bilabonnement.model.RolleDefinitioner;
 import com.springmad.bilabonnement.repository.BrugerJdbcRepository;
 import com.springmad.bilabonnement.repository.ForretningJdbcRepository;
 import jakarta.servlet.http.HttpSession;
@@ -78,7 +79,8 @@ public class ForretningController {
         // Ekstra check mod databasen.
         Bruger bruger = brugerJdbcRepository.findByNavnOgPassword(medarbejderNavn, medarbejderPassword);
 
-        if (bruger == null || !"FORRETNING".equals(bruger.getRolle())) {
+        // Singleton: henter rollen fra den ene instans af RolleDefinitioner.
+        if (bruger == null || !RolleDefinitioner.getInstance().getRolleForretning().equals(bruger.getRolle())) {
             // Hvis login eller rolle er forkert, vis fejl men behold data paa siden.
             model.addAttribute("fejl", "Forkert login eller rolle. Kun FORRETNING maa se dashboard.");
 
@@ -100,6 +102,6 @@ public class ForretningController {
         Object obj = session.getAttribute("loggedInUser");
         if (!(obj instanceof Bruger)) return false;
         Bruger b = (Bruger) obj;
-        return "FORRETNING".equals(b.getRolle());
+        return RolleDefinitioner.getInstance().getRolleForretning().equals(b.getRolle());
     }
 }

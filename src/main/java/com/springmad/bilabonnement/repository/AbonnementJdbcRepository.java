@@ -1,6 +1,7 @@
 package com.springmad.bilabonnement.repository;
 
 import com.springmad.bilabonnement.model.AbonnementOversigt;
+import com.springmad.bilabonnement.model.RolleDefinitioner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -41,15 +42,18 @@ public class AbonnementJdbcRepository {
     }
 
     // Tjekker om en kunde med givet navn har et aktivt abonnement.
+    // Singleton: status-vaerdien hentes fra RolleDefinitioner i stedet for at hardcode 'AKTIV'.
+    // Vi bruger ? som parameter i SQL saa vaerdien sendes sikkert (beskytter mod SQL-injection).
     public boolean harAktivtAbonnementForKundeNavn(String kundeNavn) {
         String sql = """
                 SELECT COUNT(*)
                 FROM abonnementer a
                 JOIN kunder k ON a.kunde_id = k.id
-                WHERE k.navn = ? AND a.status = 'AKTIV'
+                WHERE k.navn = ? AND a.status = ?
                 """;
 
-        Integer antal = jdbcTemplate.queryForObject(sql, Integer.class, kundeNavn);
+        String statusAktiv = RolleDefinitioner.getInstance().getStatusAktiv();
+        Integer antal = jdbcTemplate.queryForObject(sql, Integer.class, kundeNavn, statusAktiv);
         return antal != null && antal > 0;
     }
 
@@ -67,12 +71,14 @@ public class AbonnementJdbcRepository {
             throw new EmptyResultDataAccessException("Kunde ikke fundet", 1);
         }
 
+        // Singleton: status hentes fra RolleDefinitioner saa vi undgaar hardcodede strenge.
         String insertSql = """
                 INSERT INTO abonnementer (bil_id, kunde_id, startdato, slutdato, maanedlig_pris, status)
-                VALUES (?, ?, ?, ?, ?, 'AKTIV')
+                VALUES (?, ?, ?, ?, ?, ?)
                 """;
 
-        jdbcTemplate.update(insertSql, bilId, kundeId, startdato, slutdato, maanedligPris);
+        String statusAktiv = RolleDefinitioner.getInstance().getStatusAktiv();
+        jdbcTemplate.update(insertSql, bilId, kundeId, startdato, slutdato, maanedligPris, statusAktiv);
     }
 
     // Mapper én række fra ResultSet til et AbonnementOversigt-objekt.
@@ -106,20 +112,23 @@ public class AbonnementJdbcRepository {
                                                   String leveringsform,
                                                   String leveringsadresse) {
 
+        // Singleton: status hentes fra RolleDefinitioner i stedet for at hardcode 'AKTIV'.
         String insertSql = """
             INSERT INTO abonnementer
             (bil_id, kunde_id, startdato, slutdato, maanedlig_pris, status,
              kontrakt_type, kontrakt_varighed_dage, udleveringssted_type, leveringsform, leveringsadresse)
             VALUES
-            (?, ?, ?, ?, ?, 'AKTIV', ?, ?, ?, ?, ?)
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
+        String statusAktiv = RolleDefinitioner.getInstance().getStatusAktiv();
         jdbcTemplate.update(insertSql,
                 bilId,
                 kundeId,
                 startdato,
                 slutdato,
                 maanedligPris,
+                statusAktiv,
                 kontraktType,
                 kontraktVarighedDage,
                 udleveringsstedType,

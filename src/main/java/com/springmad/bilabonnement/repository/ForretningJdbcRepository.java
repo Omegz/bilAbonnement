@@ -1,5 +1,6 @@
 package com.springmad.bilabonnement.repository;
 
+import com.springmad.bilabonnement.model.RolleDefinitioner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -18,16 +19,20 @@ public class ForretningJdbcRepository {
     private JdbcTemplate jdbcTemplate;
 
     // KPI 1: Hvor mange aktive udlejninger (abonnementer) har vi lige nu?
+    // Singleton: status hentes fra RolleDefinitioner og sendes som parameter (?).
     public int antalAktiveUdlejninger() {
-        String sql = "SELECT COUNT(*) FROM abonnementer WHERE status = 'AKTIV'";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+        String sql = "SELECT COUNT(*) FROM abonnementer WHERE status = ?";
+        String statusAktiv = RolleDefinitioner.getInstance().getStatusAktiv();
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, statusAktiv);
         return count == null ? 0 : count;
     }
 
     // KPI 2: Hvad er samlet månedlig pris på nuværende udlejede biler?
+    // Singleton: status hentes fra RolleDefinitioner og sendes som parameter (?).
     public BigDecimal samletMaanedligPrisAktive() {
-        String sql = "SELECT COALESCE(SUM(maanedlig_pris), 0) FROM abonnementer WHERE status = 'AKTIV'";
-        BigDecimal sum = jdbcTemplate.queryForObject(sql, BigDecimal.class);
+        String sql = "SELECT COALESCE(SUM(maanedlig_pris), 0) FROM abonnementer WHERE status = ?";
+        String statusAktiv = RolleDefinitioner.getInstance().getStatusAktiv();
+        BigDecimal sum = jdbcTemplate.queryForObject(sql, BigDecimal.class, statusAktiv);
         return sum == null ? BigDecimal.ZERO : sum;
     }
 
@@ -71,6 +76,7 @@ public class ForretningJdbcRepository {
     }
 
     // Bonus: Liste over aktive udlejninger (JOIN for at vise kunde + bil + periode)
+    // Singleton: status hentes fra RolleDefinitioner og sendes som parameter (?).
     public List<Map<String, Object>> aktiveUdlejningerMedJoin() {
         String sql = """
                 SELECT a.id AS abonnement_id,
@@ -82,9 +88,10 @@ public class ForretningJdbcRepository {
                 FROM abonnementer a
                 JOIN kunder k ON a.kunde_id = k.id
                 JOIN biler b ON a.bil_id = b.id
-                WHERE a.status = 'AKTIV'
+                WHERE a.status = ?
                 ORDER BY a.startdato DESC
                 """;
-        return jdbcTemplate.queryForList(sql);
+        String statusAktiv = RolleDefinitioner.getInstance().getStatusAktiv();
+        return jdbcTemplate.queryForList(sql, statusAktiv);
     }
 }

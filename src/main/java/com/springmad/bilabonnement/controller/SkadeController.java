@@ -1,10 +1,12 @@
 package com.springmad.bilabonnement.controller;
 
 import com.springmad.bilabonnement.model.Bruger;
+import com.springmad.bilabonnement.model.RolleDefinitioner;
 import com.springmad.bilabonnement.repository.AbonnementJdbcRepository;
 import com.springmad.bilabonnement.repository.BrugerJdbcRepository;
 import com.springmad.bilabonnement.repository.KundeJdbcRepository;
 import com.springmad.bilabonnement.repository.SkadeJdbcRepository;
+import com.springmad.bilabonnement.service.SkadeValideringService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -12,7 +14,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.HashSet;
 import java.util.List;
 
 /*
@@ -48,6 +49,11 @@ public class SkadeController {
 
     @Autowired
     private BrugerJdbcRepository brugere;
+
+    // @Autowired: Spring indsaetter SkadeValideringService automatisk.
+    // Valideringslogikken er flyttet til en service saa den kan testes med JUnit.
+    @Autowired
+    private SkadeValideringService skadeValidering;
 
     /*
      * GET-endpoint der viser skade-registreringssiden.
@@ -121,7 +127,7 @@ public class SkadeController {
                 brugere.findByNavnOgPassword(medarbejderNavn, medarbejderPassword);
 
         if (medarbejder == null ||
-                !"SKADE_OG_UDBEDRING".equals(medarbejder.getRolle())) {
+                !RolleDefinitioner.getInstance().getRolleSkadeOgUdbedring().equals(medarbejder.getRolle())) {
 
             return fejl(model, kundeId, abonnementId,
                     "Forkert login eller manglende rettigheder.");
@@ -135,8 +141,9 @@ public class SkadeController {
         }
 
         // Validerer at der findes mindst een skade,
-        // og at alle beskrivelser og priser er gyldige
-        if (!gyldigSkadeliste(beskrivelse, pris)) {
+        // og at alle beskrivelser og priser er gyldige.
+        // Valideringen er flyttet til SkadeValideringService saa den kan testes med JUnit.
+        if (!skadeValidering.gyldigSkadeliste(beskrivelse, pris)) {
             return fejl(model, kundeId, abonnementId,
                     "Alle skader skal have beskrivelse og positiv pris.");
         }
@@ -159,47 +166,7 @@ public class SkadeController {
     private boolean harSkadeAdgang(HttpSession session) {
         Object user = session.getAttribute("loggedInUser");
         return user instanceof Bruger &&
-                "SKADE_OG_UDBEDRING".equals(((Bruger) user).getRolle());
-    }
-
-    /*
-     * Validerer input fra formularen.
-     * Alle skader skal:
-     *  - Have en beskrivelse
-     *  - Have en pris > 0
-     *  - Have matchende antal felter
-     *  - Ikke have duplikerede beskrivelser (samme skade registreret to gange)
-     */
-    private boolean gyldigSkadeliste(List<String> beskrivelser,
-                                     List<BigDecimal> priser) {
-
-        if (beskrivelser == null || priser == null) return false;
-        if (beskrivelser.isEmpty()) return false;
-        if (beskrivelser.size() != priser.size()) return false;
-
-        // ===== HashSet =====
-        // HashSet er en Set-implementering der:
-        //   - IKKE tillader dubletter (ligesom alle Sets)
-        //   - Bruger hashing internt, saa opslag er meget hurtigt
-        //   - Ingen garanteret raekkefoelge (modsat TreeSet som sorterer)
-        // Vi bruger HashSet her til at fange duplikerede skadebeskrivelser.
-        // Eksempel: hvis brugeren ved en fejl skriver "Ridse i doer" to gange,
-        // vil HashSet opdage det, fordi add() returnerer false naar vaerdien allerede findes.
-        HashSet<String> setBeskrivelser = new HashSet<>();
-
-        for (int i = 0; i < beskrivelser.size(); i++) {
-            if (beskrivelser.get(i).isBlank()) return false;
-            if (priser.get(i) == null || priser.get(i).signum() <= 0) return false;
-
-            // add() returnerer false hvis elementet allerede er i settet (dublet).
-            // Det virker fordi HashSet kalder hashCode() og equals() paa String-objektet.
-            boolean erNy = setBeskrivelser.add(beskrivelser.get(i));
-            if (!erNy) {
-                // Beskrivelsen fandtes allerede -> duplikat -> ugyldig
-                return false;
-            }
-        }
-        return true;
+                RolleDefinitioner.getInstance().getRolleSkadeOgUdbedring().equals(((Bruger) user).getRolle());
     }
 
     /*

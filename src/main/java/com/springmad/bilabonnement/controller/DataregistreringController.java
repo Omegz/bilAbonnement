@@ -3,10 +3,10 @@ package com.springmad.bilabonnement.controller;
 import com.springmad.bilabonnement.model.Bruger;
 import com.springmad.bilabonnement.model.LejeaftaleForm;
 import com.springmad.bilabonnement.model.RolleDefinitioner;
-import com.springmad.bilabonnement.repository.AbonnementJdbcRepository;
-import com.springmad.bilabonnement.repository.BilRepository;
-import com.springmad.bilabonnement.repository.BrugerJdbcRepository;
-import com.springmad.bilabonnement.repository.KundeJdbcRepository;
+import com.springmad.bilabonnement.service.AbonnementService;
+import com.springmad.bilabonnement.service.BilService;
+import com.springmad.bilabonnement.service.BrugerService;
+import com.springmad.bilabonnement.service.KundeService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -15,118 +15,80 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 
-// Controller for dataregistrering.
-// Klassen passer ind i MVC ved at:
-// - modtage requests (Controller)
-// - hente/gemme data via repositories (Model/DB)
-// - sende data videre til Thymeleaf templates (View)
+// @Controller: haandterer HTTP-requests for dataregistrering (lejeaftaler).
+// Hierarkiet er: Controller -> Service -> Repository
 @Controller
 @RequestMapping("/data")
 public class DataregistreringController {
 
-    // @Autowired: Spring indsaetter alle repositories automatisk (dependency injection).
+    // Controlleren taler kun med services, aldrig direkte med repositories.
+    @Autowired
+    private BilService bilService;
 
     @Autowired
-    private BilRepository bilRepository;
-    // Bruges til at hente biler fra tabellen "biler" til dropdown i formularen.
+    private KundeService kundeService;
 
     @Autowired
-    private KundeJdbcRepository kundeJdbcRepository;
-    // Bruges til at hente kunder fra tabellen "kunder" til dropdown i formularen.
+    private AbonnementService abonnementService;
 
     @Autowired
-    private AbonnementJdbcRepository abonnementJdbcRepository;
-    // Bruges til at oprette lejeaftaler i databasen via SQL (JdbcTemplate).
-
-    @Autowired
-    private BrugerJdbcRepository brugerJdbcRepository;
-    // Bruges til "svag" kontrol ved submit (brugernavn + password) og rolle-check.
+    private BrugerService brugerService;
 
     @GetMapping("/lejeaftale/opret")
-    // Endpoint: GET /data/lejeaftale/opret
-    // Viser en formular til at oprette en lejeaftale.
-    // Kun brugere med rolle DATAREGISTRERING maa se denne side.
     public String opretLejeaftaleSide(Model model, HttpSession session) {
-
-        // Rollebeskyttelse via session.
-        // loggedInUser saettes ved login i AuthController.
         if (!erDataregistrering(session)) {
             return "redirect:/login";
         }
 
-        // Tomt form-objekt til Thymeleaf data-binding (th:object).
         model.addAttribute("form", new LejeaftaleForm());
-
-        // Dropdown-data: biler og kunder fra databasen.
-        model.addAttribute("biler", bilRepository.findAll());
-        model.addAttribute("kunder", kundeJdbcRepository.findAll());
-
-        // Dagens dato bruges typisk i HTML til min= paa date input,
-        // saa brugeren ikke kan vaelge dato i fortiden.
+        // Controller -> Service -> Repository
+        model.addAttribute("biler", bilService.findAll());
+        model.addAttribute("kunder", kundeService.findAll());
         model.addAttribute("today", LocalDate.now());
 
         return "data-lejeaftale-opret";
-        // Returnerer view-navn: templates/data-lejeaftale-opret.html
     }
 
     @PostMapping("/lejeaftale/opret")
-    // Endpoint: POST /data/lejeaftale/opret
-    // Modtager formular-data og opretter lejeaftalen i databasen.
-    // Indeholder forretningsregler fra opgaven (varighed, datoer, levering).
     public String opretLejeaftale(@ModelAttribute("form") LejeaftaleForm form,
                                   Model model,
                                   HttpSession session) {
 
-        // Rollebeskyttelse igen, saa man ikke kan poste data uden korrekt rolle.
         if (!erDataregistrering(session)) {
             return "redirect:/login";
         }
 
-        // Ekstra "svag" kontrol: re-login i selve formularen.
-        // Formaal: demonstrere kontrol ved dataregistrering (MVP).
-        Bruger medarbejder = brugerJdbcRepository.findByNavnOgPassword(
+        // Controller -> Service -> Repository
+        Bruger medarbejder = brugerService.findByNavnOgPassword(
                 form.getMedarbejderNavn(),
                 form.getMedarbejderPassword()
         );
 
-        // Kontrollere at brugeren findes og har korrekt rolle.
-        // Singleton: vi henter rollen fra RolleDefinitioner i stedet for at hardcode strengen.
-        // getInstance() returnerer altid den SAMME instans (Singleton pattern).
+        // Singleton: henter rollen fra RolleDefinitioner.
         if (medarbejder == null || !RolleDefinitioner.getInstance().getRolleDataregistrering().equals(medarbejder.getRolle())) {
             return fejl(model, "Du har ikke rettigheder til at registrere lejeaftaler (forkert rolle/login).");
         }
 
-        // Validering af noedvendige felter (knyttet til database relationer).
         if (form.getKundeId() == null) {
             return fejl(model, "Du skal vaelge en kunde.");
         }
         if (form.getBilId() == null) {
             return fejl(model, "Du skal vaelge en bil.");
         }
-
-        // Startdato-regel: maa ikke vaere i fortiden.
-        // Dette matcher opgavens behov for korrekt processtyring.
         if (form.getStartdato() == null) {
             return fejl(model, "Du skal vaelge en startdato.");
         }
         if (form.getStartdato().isBefore(LocalDate.now())) {
             return fejl(model, "Startdato maa ikke vaere i fortiden.");
         }
-
-        // Pris-regel: skal vaere positiv (MVP).
         if (form.getMaanedligPris() == null || form.getMaanedligPris().signum() <= 0) {
             return fejl(model, "Maanedlig pris skal vaere positiv.");
         }
 
-        // Kontrakt-type: hvis intet er valgt, bruger vi standard LIMITED.
-        // Dette goer at systemet stadig virker selv ved manglende input.
-        // Singleton: kontrakttypen hentes fra RolleDefinitioner saa vi undgaar stavefejl.
+        // Singleton: kontrakttypen hentes fra RolleDefinitioner.
         String kontraktType = (form.getKontraktType() == null || form.getKontraktType().isBlank())
                 ? RolleDefinitioner.getInstance().getKontraktLimited() : form.getKontraktType();
 
-        // Kontraktregler (MVP) ud fra opgaven:
-        // - Limited = fast periode (150 dage)
-        // - Unlimited = variabel periode (90-1080 dage)
         int varighed;
         if (RolleDefinitioner.getInstance().getKontraktLimited().equals(kontraktType)) {
             varighed = 150;
@@ -137,8 +99,6 @@ public class DataregistreringController {
             }
         }
 
-        // Beregner slutdato hvis den ikke er udfyldt.
-        // Hvis slutdato er udfyldt, tjekker vi at den ikke ligger foer startdato.
         LocalDate slutdato = form.getSlutdato();
         if (slutdato == null) {
             slutdato = form.getStartdato().plusDays(varighed);
@@ -146,28 +106,23 @@ public class DataregistreringController {
             return fejl(model, "Slutdato maa ikke vaere foer startdato.");
         }
 
-        // Leveringsform: standard er AFHENTNING, men kan vaere LEVERING.
         String leveringsform = (form.getLeveringsform() == null || form.getLeveringsform().isBlank())
                 ? "AFHENTNING" : form.getLeveringsform();
 
-        // Hvis levering -> adresse er paakraevet.
         String adresse = form.getLeveringsadresse();
         if ("LEVERING".equals(leveringsform)) {
             if (adresse == null || adresse.isBlank()) {
                 return fejl(model, "Leveringsadresse skal udfyldes naar leveringsform er LEVERING.");
             }
         } else {
-            // Ved afhentning gemmer vi ikke adresse.
             adresse = null;
         }
 
-        // Udleveringssted type: bruges til at modelere om udlevering sker via Bilabonnement eller DS/FDM.
         String udleveringsstedType = (form.getUdleveringsstedType() == null || form.getUdleveringsstedType().isBlank())
                 ? "BILABONNEMENT" : form.getUdleveringsstedType();
 
-        // Gemmer lejeaftale i databasen.
-        // Her ligger forretningsdata samlet, og repository laver INSERT (og evt relationer) via SQL.
-        abonnementJdbcRepository.opretLejeaftaleMedDetaljerKundeId(
+        // Controller -> Service -> Repository
+        abonnementService.opretLejeaftaleMedDetaljer(
                 form.getKundeId(),
                 form.getBilId().intValue(),
                 form.getStartdato(),
@@ -180,28 +135,22 @@ public class DataregistreringController {
                 adresse
         );
 
-        // Efter oprettelse sendes brugeren til oversigten.
-        // Redirect undgaar dobbelt-submit ved refresh.
         return "redirect:/abonnementer";
     }
 
-    // Hjaelpemetode som genbruger samme side + dropdown-data ved fejl.
-    // Det sikrer at brugeren kan rette input uden at miste formularen.
+    // Hjaelpemetode: genbruger dropdown-data ved fejl.
     private String fejl(Model model, String besked) {
         model.addAttribute("fejl", besked);
-        model.addAttribute("biler", bilRepository.findAll());
-        model.addAttribute("kunder", kundeJdbcRepository.findAll());
+        model.addAttribute("biler", bilService.findAll());
+        model.addAttribute("kunder", kundeService.findAll());
         model.addAttribute("today", LocalDate.now());
         return "data-lejeaftale-opret";
     }
 
-    // Rolle-check baseret paa session.
-    // Dette er den simple autorisation (MVP) i projektet.
     private boolean erDataregistrering(HttpSession session) {
         Object obj = session.getAttribute("loggedInUser");
         if (!(obj instanceof Bruger)) return false;
         Bruger b = (Bruger) obj;
-        // Singleton: vi sammenligner med rollen fra den ene instans af RolleDefinitioner.
         return RolleDefinitioner.getInstance().getRolleDataregistrering().equals(b.getRolle());
     }
 }

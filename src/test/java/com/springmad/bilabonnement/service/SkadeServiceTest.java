@@ -8,18 +8,18 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// ===== JUnit Test for SkadeValideringService =====
+// ===== JUnit Test for SkadeService =====
 // Tester forretningslogikken for validering af skader.
 // Vi tester baade happy flow (gyldige input) og exception flow (ugyldige input).
 //
 // Grunden til at valideringen ligger i en service (og ikke i controlleren):
 // En privat metode i en controller kan man IKKE teste med JUnit.
 // Ved at flytte logikken til en public metode i en service, kan vi teste den.
-class SkadeValideringServiceTest {
+class SkadeServiceTest {
 
     // Vi opretter servicen direkte med new (den har ingen dependencies).
     // Ingen Mockito nødvendig her, fordi servicen ikke bruger databasen.
-    private final SkadeValideringService service = new SkadeValideringService();
+    private final SkadeService service = new SkadeService();
 
     // ===== HAPPY FLOW TESTS =====
 

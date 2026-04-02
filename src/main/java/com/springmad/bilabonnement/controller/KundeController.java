@@ -1,53 +1,34 @@
 package com.springmad.bilabonnement.controller;
 
 import com.springmad.bilabonnement.model.Kunde;
-import com.springmad.bilabonnement.repository.KundeJdbcRepository;
+import com.springmad.bilabonnement.service.KundeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-// Controller der haandterer kunder.
-// Kunder er en central del af systemet, da abonnementer altid knyttes til en kunde.
-// Denne controller understotter simpel CRUD (opret + vis).
+// @Controller: haandterer HTTP-requests for kunder.
+// Hierarkiet er: Controller -> Service -> Repository
 @Controller
 @RequestMapping("/kunder")
 public class KundeController {
 
-    // @Autowired: Spring indsaetter KundeJdbcRepository automatisk (dependency injection).
-    // Repository der indeholder SQL til tabellen "kunder".
+    // Controlleren taler kun med servicen, aldrig direkte med repository.
     @Autowired
-    private KundeJdbcRepository kundeJdbcRepository;
+    private KundeService kundeService;
 
-    @GetMapping
     // Endpoint: GET /kunder
-    // Viser:
-    // - formular til oprettelse af kunde
-    // - tabel med alle eksisterende kunder
+    @GetMapping
     public String kunderSide(Model model) {
-
-        // Tomt Kunde-objekt bruges til formular-binding i Thymeleaf.
         model.addAttribute("kunde", new Kunde());
-
-        // Liste med alle kunder fra databasen.
-        // Bruges baade til oversigt og senere som dropdown i andre moduler.
-        model.addAttribute("kunder", kundeJdbcRepository.findAll());
-
+        model.addAttribute("kunder", kundeService.findAll());
         return "kunder";
-        // templates/kunder.html
     }
 
-    @PostMapping
     // Endpoint: POST /kunder
-    // Modtager data fra formularen og opretter kunden i databasen.
+    @PostMapping
     public String opretKunde(@ModelAttribute("kunde") Kunde kunde) {
-
-        // Gemmer kunden via repository (INSERT SQL).
-        kundeJdbcRepository.opretKunde(kunde);
-
-        // Redirect sikrer:
-        // - ingen dobbelt-submit
-        // - opdateret kundeliste efter oprettelse
+        kundeService.opretKunde(kunde);
         return "redirect:/kunder";
     }
 }

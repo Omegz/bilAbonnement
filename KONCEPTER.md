@@ -425,6 +425,88 @@ public String sletKunde(@PathVariable int id) {
 
 ---
 
+## Autowiring (Dependency Injection)
+
+Autowiring er Spring's maade at automatisk "indsaette" afhaengigheder i en klasse,
+uden at man selv behoever at oprette objekterne med `new`.
+
+### Problemet UDEN @Autowired
+
+```java
+// UDEN Autowired — man opretter objekter manuelt med new
+public class BilController {
+    private BilService bilService = new BilService();  // FORKERT
+    // Problemer:
+    //   - Vi skal selv styre alle objekter
+    //   - BilService har selv brug for BilRepository — hvem opretter det?
+    //   - Svært at teste (vi kan ikke bytte til en mock)
+}
+```
+
+### Loesningen MED @Autowired
+
+```java
+// MED Autowired — Spring opretter og indsaetter objektet automatisk
+public class BilController {
+    @Autowired
+    private BilService bilService;  // Spring saetter dette felt automatisk
+    // Fordele:
+    //   - Vi skriver aldrig "new BilService()"
+    //   - Spring styrer objektets livscyklus
+    //   - Spring indsaetter ogsaa BilRepository i BilService automatisk
+}
+```
+
+### Hele kaeden med @Autowired
+
+Spring indsaetter afhaengigheder i hele kaeden automatisk:
+
+```
+Spring ser at BilController har @Autowired BilService
+  -> Spring opretter BilService
+  -> Spring ser at BilService har @Autowired BilRepository
+     -> Spring opretter BilRepository
+     -> Spring ser at BilRepository har @Autowired JdbcTemplate
+        -> Spring opretter JdbcTemplate (fra application.properties)
+```
+
+Vi skriver aldrig `new` for nogen af disse objekter. Spring goer det hele.
+
+### Hvor bruger vi @Autowired i projektet?
+
+| Lag | Klasse | Hvad der injiceres | Hvorfor |
+|---|---|---|---|
+| Controller | BilController | BilService | Controller taler med service |
+| Controller | KundeController | KundeService | Controller taler med service |
+| Controller | AuthController | BrugerService | Controller taler med service |
+| Controller | AbonnementController | AbonnementService, BilService | Controller taler med services |
+| Controller | DataregistreringController | AbonnementService, BilService, KundeService, BrugerService | Controller taler med services |
+| Controller | ForretningController | ForretningService, BrugerService | Controller taler med services |
+| Controller | SkadeController | SkadeService, KundeService, BrugerService | Controller taler med services |
+| Controller | ApiController | BilService, KundeService, ForretningService | RestController taler med services |
+| Service | BilService | BilRepository | Service taler med repository |
+| Service | KundeService | KundeJdbcRepository | Service taler med repository |
+| Service | BrugerService | BrugerJdbcRepository | Service taler med repository |
+| Service | AbonnementService | AbonnementJdbcRepository | Service taler med repository |
+| Service | ForretningService | ForretningJdbcRepository | Service taler med repository |
+| Service | SkadeService | SkadeJdbcRepository, AbonnementJdbcRepository | Service taler med repositories |
+| Repository | BilRepository | JdbcTemplate | Repository taler med database |
+| Repository | KundeJdbcRepository | JdbcTemplate | Repository taler med database |
+| Repository | BrugerJdbcRepository | JdbcTemplate | Repository taler med database |
+| Repository | AbonnementJdbcRepository | JdbcTemplate | Repository taler med database |
+| Repository | ForretningJdbcRepository | JdbcTemplate | Repository taler med database |
+| Repository | SkadeJdbcRepository | JdbcTemplate | Repository taler med database |
+
+### Hvor bruger vi IKKE @Autowired?
+
+| Klasse | Hvorfor ingen @Autowired |
+|---|---|
+| PageController | Har ingen afhaengigheder — returnerer kun view-navne ("index", "about") |
+| Bil, Kunde, Bruger (models) | Er POJO'er — de er ikke Spring-styrede, de oprettes med `new` i controllers |
+| RolleDefinitioner (Singleton) | Styres af Singleton-patternet (privat konstruktoer + getInstance()), ikke af Spring |
+
+---
+
 ## Tjekliste: Foelger vi reglerne?
 
 | Regel | Status |

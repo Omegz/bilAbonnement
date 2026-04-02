@@ -324,6 +324,107 @@ graph TD
 
 ---
 
+## Spring Annotations
+
+Annotations er smaa maerker (@) i koden som fortaeller Spring hvordan en klasse eller metode skal bruges.
+De erstatter XML-konfiguration og goer koden enklere.
+
+### Alle annotations vi bruger i projektet
+
+| Annotation | Hvad den goer | Hvor vi bruger den |
+|---|---|---|
+| `@Controller` | Markerer en klasse der haandterer HTTP-requests og returnerer **HTML views** | Alle controllers (BilController, AuthController osv.) |
+| `@RestController` | Markerer en klasse der returnerer **data (JSON)** i stedet for HTML | ApiController (`/api/biler`, `/api/kunder`, `/api/dashboard`) |
+| `@Service` | Markerer en klasse som forretningslogik-lag | Alle services (BilService, KundeService osv.) |
+| `@Repository` | Markerer en klasse som databaseadgangs-lag | Alle repositories (BilRepository, KundeJdbcRepository osv.) |
+| `@Autowired` | Spring indsaetter en dependency automatisk (dependency injection) | Alle felter i controllers, services og repositories |
+| `@GetMapping` | Haandterer HTTP GET-requests (hente data, vise sider) | Alle GET-endpoints |
+| `@PostMapping` | Haandterer HTTP POST-requests (sende/oprette data) | Alle POST-endpoints |
+| `@RequestMapping` | Saetter en basis-URL for alle endpoints i en controller | `@RequestMapping("/biler")`, `@RequestMapping("/api")` osv. |
+| `@RequestParam` | Henter vaerdier fra query-parametre i URL'en (fx `?status=active`) | Login-formular, skade-filtrering osv. |
+| `@PathVariable` | Henter vaerdier direkte fra URL-stien (fx `/kunder/slet/5` -> id=5) | Slet-endpoint i KundeController |
+| `@ModelAttribute` | Binder formdata fra HTML til et Java-objekt automatisk | Opret bil, opret kunde, signup osv. |
+
+### @Controller vs @RestController
+
+```
+@Controller     -> returnerer et VIEW (HTML-side via Thymeleaf)
+@RestController -> returnerer DATA (JSON) direkte til browseren
+
+Huskeregl: "Controller viser sider, RestController giver data."
+```
+
+**@Controller eksempel** (returnerer HTML):
+```java
+@Controller
+public class BilController {
+    @GetMapping("/biler")
+    public String bilerPage(Model model) {
+        model.addAttribute("biler", bilService.findAll());
+        return "biler";  // -> templates/biler.html
+    }
+}
+```
+
+**@RestController eksempel** (returnerer JSON):
+```java
+@RestController
+@RequestMapping("/api")
+public class ApiController {
+    @GetMapping("/biler")
+    public List<Bil> alleBiler() {
+        return bilService.findAll();  // -> JSON: [{"id":1,"navn":"Toyota",...}]
+    }
+}
+```
+
+### @RequestParam vs @PathVariable
+
+Begge henter vaerdier fra URL'en, men paa forskellige maader:
+
+```
+@RequestParam:  /kunder?id=5        -> henter fra query-parametre
+@PathVariable:  /kunder/slet/5      -> henter fra URL-stien
+
+@RequestParam bruges til: filtrering, soegning, formulardata
+@PathVariable bruges til: slet, vis detaljer, opdater (med id i URL'en)
+```
+
+**@RequestParam eksempel:**
+```java
+@GetMapping("/opret")
+public String visSide(@RequestParam(required = false) Integer kundeId) {
+    // URL: /skader/opret?kundeId=3  ->  kundeId = 3
+}
+```
+
+**@PathVariable eksempel:**
+```java
+@GetMapping("/slet/{id}")
+public String sletKunde(@PathVariable int id) {
+    // URL: /kunder/slet/5  ->  id = 5
+    kundeService.sletKunde(id);
+    return "redirect:/kunder";
+}
+```
+
+### @GetMapping vs @PostMapping
+
+```
+@GetMapping:  HTTP GET  -> hente data, vise sider (ingen sideeffekter)
+@PostMapping: HTTP POST -> oprette, aendre, slette data (har sideeffekter)
+```
+
+| Handling | HTTP-metode | Annotation | Eksempel |
+|---|---|---|---|
+| Vis alle biler | GET | `@GetMapping` | `GET /biler` |
+| Opret ny bil | POST | `@PostMapping` | `POST /biler` |
+| Vis opret-formular | GET | `@GetMapping` | `GET /abonnementer/opret` |
+| Gem abonnement | POST | `@PostMapping` | `POST /abonnementer/opret` |
+| Slet kunde | GET | `@GetMapping` | `GET /kunder/slet/{id}` |
+
+---
+
 ## Tjekliste: Foelger vi reglerne?
 
 | Regel | Status |
@@ -336,6 +437,12 @@ graph TD
 | Static mappen indeholder CSS | Ja — `static/css/style.css` (1 ekstern fil) |
 | Template mappen indeholder Thymeleaf HTML | Ja — 13 templates + fragments |
 | CSS er external (ikke inline) | Ja — alle templates linker til `style.css`, nul `<style>` blokke |
+| @Controller bruges til HTML views | Ja — 7 controllers returnerer Thymeleaf templates |
+| @RestController bruges til JSON data | Ja — ApiController returnerer JSON paa `/api/*` |
+| @PathVariable bruges til URL-sti vaerdier | Ja — `KundeController: /kunder/slet/{id}` |
+| @RequestParam bruges til query-parametre | Ja — login, skade-filtrering, abonnement-opret |
+| @ModelAttribute bruges til formular-binding | Ja — opret bil, opret kunde, signup |
+| @GetMapping og @PostMapping bruges korrekt | Ja — GET henter data, POST opretter data |
 | Passwords er i .env (ikke i koden) | Ja — `application.properties` laeser fra miljoevariabler |
 | @Autowired bruges til dependency injection | Ja — paa alle felter i controllers, services og repositories |
 | Singleton bruges til delte definitioner | Ja — `RolleDefinitioner.getInstance()` |

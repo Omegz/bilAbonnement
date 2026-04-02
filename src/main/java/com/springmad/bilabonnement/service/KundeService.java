@@ -24,4 +24,9 @@ public class KundeService {
     public void opretKunde(Kunde kunde) {
         kundeJdbcRepository.opretKunde(kunde);
     }
+
+    // Sletter en kunde fra databasen baseret paa id.
+    public void sletKunde(int id) {
+        kundeJdbcRepository.sletKunde(id);
+    }
 }

@@ -29,6 +29,13 @@ public class KundeJdbcRepository {
         return jdbcTemplate.query(sql, (rs, rowNum) -> mapRowTilKunde(rs));
     }
 
+    // Sletter en kunde fra databasen baseret paa id.
+    // jdbc.update() bruges til INSERT, UPDATE og DELETE.
+    public void sletKunde(int id) {
+        String sql = "DELETE FROM kunder WHERE id = ?";
+        jdbcTemplate.update(sql, id);
+    }
+
     private Kunde mapRowTilKunde(ResultSet rs) throws SQLException {
         Kunde k = new Kunde();
         k.setId(rs.getInt("id"));

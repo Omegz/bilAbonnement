@@ -70,8 +70,8 @@ public class SkadeController {
         // Controller -> Service -> Repository
         Bruger medarbejder = brugerService.findByNavnOgPassword(medarbejderNavn, medarbejderPassword);
 
-        if (medarbejder == null ||
-                !RolleDefinitioner.getInstance().getRolleSkadeOgUdbedring().equals(medarbejder.getRolle())) {
+        String kravetRolle = RolleDefinitioner.getInstance().getRolleSkadeOgUdbedring();
+        if (medarbejder == null || !kravetRolle.equals(medarbejder.getRolle())) {
             return fejl(model, kundeId, abonnementId, "Forkert login eller manglende rettigheder.");
         }
 
@@ -90,9 +90,17 @@ public class SkadeController {
     }
 
     private boolean harSkadeAdgang(HttpSession session) {
-        Object user = session.getAttribute("loggedInUser");
-        return user instanceof Bruger &&
-                RolleDefinitioner.getInstance().getRolleSkadeOgUdbedring().equals(((Bruger) user).getRolle());
+        Object obj = session.getAttribute("loggedInUser");
+
+        if (!(obj instanceof Bruger)) {
+            return false;
+        }
+
+        Bruger bruger = (Bruger) obj;
+        String kravetRolle = RolleDefinitioner.getInstance().getRolleSkadeOgUdbedring();
+        String brugerensRolle = bruger.getRolle();
+
+        return kravetRolle.equals(brugerensRolle);
     }
 
     private String fejl(Model model, Integer kundeId, Integer abonnementId, String besked) {

@@ -65,7 +65,10 @@ public class DataregistreringController {
         );
 
         // Singleton: henter rollen fra RolleDefinitioner.
-        if (medarbejder == null || !RolleDefinitioner.getInstance().getRolleDataregistrering().equals(medarbejder.getRolle())) {
+        // Vi gemmer vaerdien i en variabel foerst saa linjen er nemmere at laese.
+        String kravetRolle = RolleDefinitioner.getInstance().getRolleDataregistrering();
+
+        if (medarbejder == null || !kravetRolle.equals(medarbejder.getRolle())) {
             return fejl(model, "Du har ikke rettigheder til at registrere lejeaftaler (forkert rolle/login).");
         }
 
@@ -85,15 +88,26 @@ public class DataregistreringController {
             return fejl(model, "Maanedlig pris skal vaere positiv.");
         }
 
-        // Singleton: kontrakttypen hentes fra RolleDefinitioner.
-        String kontraktType = (form.getKontraktType() == null || form.getKontraktType().isBlank())
-                ? RolleDefinitioner.getInstance().getKontraktLimited() : form.getKontraktType();
+        // Kontrakttype: brug formularens vaerdi, eller standard LIMITED hvis tom.
+        String kontraktType;
+        if (form.getKontraktType() == null || form.getKontraktType().isBlank()) {
+            kontraktType = RolleDefinitioner.getInstance().getKontraktLimited();
+        } else {
+            kontraktType = form.getKontraktType();
+        }
 
+        // Varighed afhaenger af kontrakttypen.
+        String limited = RolleDefinitioner.getInstance().getKontraktLimited();
         int varighed;
-        if (RolleDefinitioner.getInstance().getKontraktLimited().equals(kontraktType)) {
+        if (limited.equals(kontraktType)) {
             varighed = 150;
         } else {
-            varighed = (form.getKontraktVarighedDage() == null) ? 90 : form.getKontraktVarighedDage();
+            // Unlimited: brug formularens vaerdi, eller 90 som standard.
+            if (form.getKontraktVarighedDage() == null) {
+                varighed = 90;
+            } else {
+                varighed = form.getKontraktVarighedDage();
+            }
             if (varighed < 90 || varighed > 1080) {
                 return fejl(model, "Unlimited-kontrakt skal vaere mellem 90 og 1080 dage.");
             }
@@ -106,8 +120,13 @@ public class DataregistreringController {
             return fejl(model, "Slutdato maa ikke vaere foer startdato.");
         }
 
-        String leveringsform = (form.getLeveringsform() == null || form.getLeveringsform().isBlank())
-                ? "AFHENTNING" : form.getLeveringsform();
+        // Leveringsform: brug formularens vaerdi, eller AFHENTNING som standard.
+        String leveringsform;
+        if (form.getLeveringsform() == null || form.getLeveringsform().isBlank()) {
+            leveringsform = "AFHENTNING";
+        } else {
+            leveringsform = form.getLeveringsform();
+        }
 
         String adresse = form.getLeveringsadresse();
         if ("LEVERING".equals(leveringsform)) {
@@ -118,8 +137,13 @@ public class DataregistreringController {
             adresse = null;
         }
 
-        String udleveringsstedType = (form.getUdleveringsstedType() == null || form.getUdleveringsstedType().isBlank())
-                ? "BILABONNEMENT" : form.getUdleveringsstedType();
+        // Udleveringssted: brug formularens vaerdi, eller BILABONNEMENT som standard.
+        String udleveringsstedType;
+        if (form.getUdleveringsstedType() == null || form.getUdleveringsstedType().isBlank()) {
+            udleveringsstedType = "BILABONNEMENT";
+        } else {
+            udleveringsstedType = form.getUdleveringsstedType();
+        }
 
         // Controller -> Service -> Repository
         abonnementService.opretLejeaftaleMedDetaljer(
@@ -148,9 +172,21 @@ public class DataregistreringController {
     }
 
     private boolean erDataregistrering(HttpSession session) {
+        // Hent bruger fra session
         Object obj = session.getAttribute("loggedInUser");
-        if (!(obj instanceof Bruger)) return false;
-        Bruger b = (Bruger) obj;
-        return RolleDefinitioner.getInstance().getRolleDataregistrering().equals(b.getRolle());
+
+        // instanceof tjekker om objektet er en Bruger
+        if (!(obj instanceof Bruger)) {
+            return false;
+        }
+
+        // Cast: vi ved nu at obj ER en Bruger, saa vi kan caste
+        Bruger bruger = (Bruger) obj;
+
+        // Sammenlign rollen med Singleton-vaerdien
+        String kravetRolle = RolleDefinitioner.getInstance().getRolleDataregistrering();
+        String brugerensRolle = bruger.getRolle();
+
+        return kravetRolle.equals(brugerensRolle);
     }
 }

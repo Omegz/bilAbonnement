@@ -91,7 +91,8 @@ public class ForretningController {
         // Controller -> Service -> Repository
         Bruger bruger = brugerService.findByNavnOgPassword(medarbejderNavn, medarbejderPassword);
 
-        if (bruger == null || !RolleDefinitioner.getInstance().getRolleForretning().equals(bruger.getRolle())) {
+        String kravetRolle = RolleDefinitioner.getInstance().getRolleForretning();
+        if (bruger == null || !kravetRolle.equals(bruger.getRolle())) {
             model.addAttribute("fejl", "Forkert login eller rolle. Kun FORRETNING maa se dashboard.");
             model.addAttribute("antalAktive", forretningService.antalAktiveUdlejninger());
             model.addAttribute("samletPris", forretningService.samletMaanedligPrisAktive());
@@ -104,8 +105,15 @@ public class ForretningController {
 
     private boolean erForretning(HttpSession session) {
         Object obj = session.getAttribute("loggedInUser");
-        if (!(obj instanceof Bruger)) return false;
-        Bruger b = (Bruger) obj;
-        return RolleDefinitioner.getInstance().getRolleForretning().equals(b.getRolle());
+
+        if (!(obj instanceof Bruger)) {
+            return false;
+        }
+
+        Bruger bruger = (Bruger) obj;
+        String kravetRolle = RolleDefinitioner.getInstance().getRolleForretning();
+        String brugerensRolle = bruger.getRolle();
+
+        return kravetRolle.equals(brugerensRolle);
     }
 }

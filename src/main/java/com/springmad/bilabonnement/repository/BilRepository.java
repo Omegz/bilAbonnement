@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Date;
 import java.util.List;
 
 @Repository
@@ -14,19 +15,31 @@ import java.util.List;
 public class BilRepository {
 
     // @Autowired fortaeller Spring at den automatisk skal indsaette JdbcTemplate.
-    // Vi slipper for selv at oprette objektet med new.
     @Autowired
     private JdbcTemplate jdbc;
 
     // RowMapper der mapper hver raekke fra ResultSet til et Bil-objekt.
-    // Hver kolonne hentes med rs.getXxx() og saettes paa objektet.
+    // (rs, rowNum) -> { ... } er en lambda: en kort maade at skrive en metode paa.
+    // rs = ResultSet (raekkens data fra databasen).
+    // rowNum = raekkenummeret (bruges ikke her, men kraeves af RowMapper).
     private final RowMapper<Bil> bilRowMapper = (rs, rowNum) -> {
         Bil bil = new Bil();
         bil.setId(rs.getInt("id"));
         bil.setNavn(rs.getString("navn"));
         bil.setAar(rs.getInt("aar"));
-        bil.setStartsdato(rs.getDate("startsdato") != null ? rs.getDate("startsdato").toLocalDate() : null);
-        bil.setSlutsdato(rs.getDate("slutsdato") != null ? rs.getDate("slutsdato").toLocalDate() : null);
+
+        // Datoer kan vaere null i databasen, saa vi tjekker foerst.
+        // Hvis datoen findes, konverterer vi fra java.sql.Date til LocalDate.
+        Date startDato = rs.getDate("startsdato");
+        if (startDato != null) {
+            bil.setStartsdato(startDato.toLocalDate());
+        }
+
+        Date slutDato = rs.getDate("slutsdato");
+        if (slutDato != null) {
+            bil.setSlutsdato(slutDato.toLocalDate());
+        }
+
         return bil;
     };
 

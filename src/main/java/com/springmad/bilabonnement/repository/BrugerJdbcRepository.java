@@ -47,11 +47,21 @@ public class BrugerJdbcRepository {
                 new BeanPropertyRowMapper<>(Bruger.class),
                 navn, password);
 
-        // stream().findFirst().orElse(null):
-        // Returnerer foerste element i listen, eller null hvis listen er tom.
+        // stream() konverterer listen til en stream (en raekke af elementer).
+        // findFirst() henter det foerste element.
+        // orElse(null) returnerer null hvis listen er tom (ingen bruger fundet).
+        //
+        // Det samme som:
+        //   if (resultater.isEmpty()) {
+        //       return null;
+        //   } else {
+        //       return resultater.get(0);
+        //   }
+        //
+        // Men stream-versionen er kortere:
         return resultater
-                .stream()
-                .findFirst()
-                .orElse(null);
+                .stream()       // lav listen om til en stream
+                .findFirst()    // hent foerste element (eller tomt)
+                .orElse(null);  // hvis tomt, returner null
     }
 }

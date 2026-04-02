@@ -62,8 +62,16 @@ public class ForretningJdbcRepository {
 
         // Gennemlober alle raekker og laegger dem ind i vores HashMap.
         for (Map<String, Object> raekke : raekker) {
-            String status = (String) raekke.get("status");
-            int antal = ((Number) raekke.get("antal")).intValue();
+            // raekke.get("status") returnerer Object, saa vi caster til String.
+            // Cast = vi fortaeller Java hvilken type det er.
+            Object statusObj = raekke.get("status");
+            String status = (String) statusObj;
+
+            // raekke.get("antal") returnerer Object (kan vaere Long eller Integer).
+            // Vi caster til Number (faelles type for alle tal) og henter int-vaerdien.
+            Object antalObj = raekke.get("antal");
+            Number antalNumber = (Number) antalObj;
+            int antal = antalNumber.intValue();
 
             // put() indsaetter noegel-vaerdi parret i HashMap.
             // Hvis noeglen allerede findes, overskrives den gamle vaerdi.

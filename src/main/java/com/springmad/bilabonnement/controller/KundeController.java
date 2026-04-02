@@ -2,6 +2,7 @@ package com.springmad.bilabonnement.controller;
 
 import com.springmad.bilabonnement.model.Kunde;
 import com.springmad.bilabonnement.repository.KundeJdbcRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,13 +14,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/kunder")
 public class KundeController {
 
-    private final KundeJdbcRepository kundeJdbcRepository;
+    // @Autowired: Spring indsaetter KundeJdbcRepository automatisk (dependency injection).
     // Repository der indeholder SQL til tabellen "kunder".
-
-    public KundeController(KundeJdbcRepository kundeJdbcRepository) {
-        // Constructor injection sikrer at controlleren altid har adgang til databasen.
-        this.kundeJdbcRepository = kundeJdbcRepository;
-    }
+    @Autowired
+    private KundeJdbcRepository kundeJdbcRepository;
 
     @GetMapping
     // Endpoint: GET /kunder

@@ -1,6 +1,7 @@
 package com.springmad.bilabonnement.repository;
 
 import com.springmad.bilabonnement.model.Bruger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -11,14 +12,11 @@ import java.sql.SQLException;
 @Repository
 public class BrugerJdbcRepository {
 
-    private final JdbcTemplate jdbcTemplate;
+    // @Autowired: Spring indsaetter JdbcTemplate automatisk (dependency injection).
     // JdbcTemplate er Spring sin helper til at koere SQL (SELECT/INSERT/UPDATE/DELETE)
     // og samtidig haandtere forbindelser og prepared statements.
-
-    public BrugerJdbcRepository(JdbcTemplate jdbcTemplate) {
-        // Constructor injection: Spring sender JdbcTemplate ind automatisk.
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     // Opretter en bruger i tabellen "brugere".
     // Bruges af signup-flowet i AuthController.

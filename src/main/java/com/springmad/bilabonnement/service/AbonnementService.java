@@ -1,6 +1,7 @@
 package com.springmad.bilabonnement.service;
 
 import com.springmad.bilabonnement.repository.AbonnementJdbcRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -11,11 +12,9 @@ import java.time.LocalDate;
 @Service
 public class AbonnementService {
 
-    private final AbonnementJdbcRepository abonnementJdbcRepository;
-
-    public AbonnementService(AbonnementJdbcRepository abonnementJdbcRepository) {
-        this.abonnementJdbcRepository = abonnementJdbcRepository;
-    }
+    // @Autowired: Spring indsaetter repository automatisk (dependency injection).
+    @Autowired
+    private AbonnementJdbcRepository abonnementJdbcRepository;
 
     // Opretter et abonnement, hvis input er gyldigt og kunden ikke har et aktivt abonnement.
     public void opretAbonnementHvisMuligt(String kundeNavn,

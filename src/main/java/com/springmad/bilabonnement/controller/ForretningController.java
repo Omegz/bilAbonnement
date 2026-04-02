@@ -4,6 +4,7 @@ import com.springmad.bilabonnement.model.Bruger;
 import com.springmad.bilabonnement.repository.BrugerJdbcRepository;
 import com.springmad.bilabonnement.repository.ForretningJdbcRepository;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -17,19 +18,15 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/dashboard")
 public class ForretningController {
 
-    private final ForretningJdbcRepository forretningJdbcRepository;
-    // Repository med SQL-queries til KPI-data og JOINs
-    // (fx aktive abonnementer, samlet pris, oversigter).
+    // @Autowired: Spring indsaetter repositories automatisk (dependency injection).
 
-    private final BrugerJdbcRepository brugerJdbcRepository;
+    @Autowired
+    private ForretningJdbcRepository forretningJdbcRepository;
+    // Repository med SQL-queries til KPI-data og JOINs.
+
+    @Autowired
+    private BrugerJdbcRepository brugerJdbcRepository;
     // Bruges til svag re-login kontrol ved refresh af dashboard.
-
-    public ForretningController(ForretningJdbcRepository forretningJdbcRepository,
-                                BrugerJdbcRepository brugerJdbcRepository) {
-        // Constructor injection sikrer loose coupling og testbarhed.
-        this.forretningJdbcRepository = forretningJdbcRepository;
-        this.brugerJdbcRepository = brugerJdbcRepository;
-    }
 
     @GetMapping
     // Endpoint: GET /dashboard

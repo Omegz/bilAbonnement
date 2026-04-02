@@ -1,6 +1,7 @@
 package com.springmad.bilabonnement.repository;
 
 import com.springmad.bilabonnement.model.Kunde;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -12,11 +13,9 @@ import java.util.List;
 @Repository
 public class KundeJdbcRepository {
 
-    private final JdbcTemplate jdbcTemplate;
-
-    public KundeJdbcRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    // @Autowired: Spring indsaetter JdbcTemplate automatisk (dependency injection).
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     // Opretter en ny kunde i databasen.
     public void opretKunde(Kunde kunde) {

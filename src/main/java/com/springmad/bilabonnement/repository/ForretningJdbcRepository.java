@@ -1,5 +1,6 @@
 package com.springmad.bilabonnement.repository;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -11,11 +12,9 @@ import java.util.Map;
 @Repository
 public class ForretningJdbcRepository {
 
-    private final JdbcTemplate jdbcTemplate;
-
-    public ForretningJdbcRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    // @Autowired: Spring indsaetter JdbcTemplate automatisk (dependency injection).
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     // KPI 1: Hvor mange aktive udlejninger (abonnementer) har vi lige nu?
     public int antalAktiveUdlejninger() {

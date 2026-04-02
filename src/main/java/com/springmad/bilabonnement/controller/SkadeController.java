@@ -6,6 +6,7 @@ import com.springmad.bilabonnement.repository.BrugerJdbcRepository;
 import com.springmad.bilabonnement.repository.KundeJdbcRepository;
 import com.springmad.bilabonnement.repository.SkadeJdbcRepository;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -32,28 +33,20 @@ import java.util.List;
 @RequestMapping("/skader")
 public class SkadeController {
 
-    /*
-     * Repositories anvendes til databaseadgang via JDBC.
-     * Hver repository har ansvar for eet domæne.
-     */
-    private final KundeJdbcRepository kunder;
-    private final AbonnementJdbcRepository abonnementer;
-    private final SkadeJdbcRepository skader;
-    private final BrugerJdbcRepository brugere;
+    // @Autowired: Spring indsaetter alle repositories automatisk (dependency injection).
+    // Hver repository har ansvar for eet domaene.
 
-    /*
-     * Constructor injection.
-     * Spring indsætter automatisk de nødvendige repositories.
-     */
-    public SkadeController(KundeJdbcRepository kunder,
-                           AbonnementJdbcRepository abonnementer,
-                           SkadeJdbcRepository skader,
-                           BrugerJdbcRepository brugere) {
-        this.kunder = kunder;
-        this.abonnementer = abonnementer;
-        this.skader = skader;
-        this.brugere = brugere;
-    }
+    @Autowired
+    private KundeJdbcRepository kunder;
+
+    @Autowired
+    private AbonnementJdbcRepository abonnementer;
+
+    @Autowired
+    private SkadeJdbcRepository skader;
+
+    @Autowired
+    private BrugerJdbcRepository brugere;
 
     /*
      * GET-endpoint der viser skade-registreringssiden.

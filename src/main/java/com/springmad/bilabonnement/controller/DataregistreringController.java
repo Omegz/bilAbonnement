@@ -7,6 +7,7 @@ import com.springmad.bilabonnement.repository.BilRepository;
 import com.springmad.bilabonnement.repository.BrugerJdbcRepository;
 import com.springmad.bilabonnement.repository.KundeJdbcRepository;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -22,28 +23,23 @@ import java.time.LocalDate;
 @RequestMapping("/data")
 public class DataregistreringController {
 
-    private final BilRepository bilRepository;
+    // @Autowired: Spring indsaetter alle repositories automatisk (dependency injection).
+
+    @Autowired
+    private BilRepository bilRepository;
     // Bruges til at hente biler fra tabellen "biler" til dropdown i formularen.
 
-    private final KundeJdbcRepository kundeJdbcRepository;
+    @Autowired
+    private KundeJdbcRepository kundeJdbcRepository;
     // Bruges til at hente kunder fra tabellen "kunder" til dropdown i formularen.
 
-    private final AbonnementJdbcRepository abonnementJdbcRepository;
+    @Autowired
+    private AbonnementJdbcRepository abonnementJdbcRepository;
     // Bruges til at oprette lejeaftaler i databasen via SQL (JdbcTemplate).
 
-    private final BrugerJdbcRepository brugerJdbcRepository;
+    @Autowired
+    private BrugerJdbcRepository brugerJdbcRepository;
     // Bruges til "svag" kontrol ved submit (brugernavn + password) og rolle-check.
-
-    public DataregistreringController(BilRepository bilRepository,
-                                      KundeJdbcRepository kundeJdbcRepository,
-                                      AbonnementJdbcRepository abonnementJdbcRepository,
-                                      BrugerJdbcRepository brugerJdbcRepository) {
-        // Constructor injection: Spring leverer dependencies automatisk.
-        this.bilRepository = bilRepository;
-        this.kundeJdbcRepository = kundeJdbcRepository;
-        this.abonnementJdbcRepository = abonnementJdbcRepository;
-        this.brugerJdbcRepository = brugerJdbcRepository;
-    }
 
     @GetMapping("/lejeaftale/opret")
     // Endpoint: GET /data/lejeaftale/opret

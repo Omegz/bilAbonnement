@@ -2,6 +2,7 @@ package com.springmad.bilabonnement.controller;
 
 import com.springmad.bilabonnement.repository.AbonnementJdbcRepository;
 import com.springmad.bilabonnement.repository.BilRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,20 +19,14 @@ import java.time.LocalDate;
 // Binder denne klasse til Spring MVC saa den kan modtage requests.
 public class AbonnementController {
 
-    private final AbonnementJdbcRepository abonnementJdbcRepository;
-    // Dependency: kalder SQL-logik for abonnementer (JOIN, insert, checks). Ligger i repository laget.
+    // @Autowired: Spring indsaetter repositories automatisk (dependency injection).
+    // AbonnementJdbcRepository kalder SQL-logik for abonnementer (JOIN, insert, checks).
+    @Autowired
+    private AbonnementJdbcRepository abonnementJdbcRepository;
 
-    private final BilRepository bilRepository;
-    // Dependency: henter biler fra tabellen "biler" (typisk via CrudRepository). Bruges i opret-formular.
-
-    public AbonnementController(AbonnementJdbcRepository abonnementJdbcRepository,
-                                BilRepository bilRepository) {
-        // Constructor injection: Spring giver os instanserne automatisk ved startup.
-        this.abonnementJdbcRepository = abonnementJdbcRepository;
-        // Gemmer reference til abonnement repository, saa controller kan bruge det i endpoints.
-        this.bilRepository = bilRepository;
-        // Gemmer reference til bil repository, saa vi kan hente biler til view.
-    }
+    // BilRepository henter biler fra tabellen "biler". Bruges i opret-formular.
+    @Autowired
+    private BilRepository bilRepository;
 
     @GetMapping("/abonnementer")
     // Endpoint: GET /abonnementer

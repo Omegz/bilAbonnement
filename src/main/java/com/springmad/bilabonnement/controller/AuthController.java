@@ -3,6 +3,7 @@ package com.springmad.bilabonnement.controller;
 import com.springmad.bilabonnement.model.Bruger;
 import com.springmad.bilabonnement.repository.BrugerJdbcRepository;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,14 +14,10 @@ import org.springframework.web.bind.annotation.*;
 // Marker klassen som Spring MVC controller, saa den kan haandtere HTTP requests.
 public class AuthController {
 
-    private final BrugerJdbcRepository brugerJdbcRepository;
-    // Dependency: bruges til at gemme og hente brugere fra databasen via SQL (JdbcTemplate).
-
-    public AuthController(BrugerJdbcRepository brugerJdbcRepository) {
-        // Constructor injection: Spring injicerer repository automatisk ved startup.
-        this.brugerJdbcRepository = brugerJdbcRepository;
-        // Gemmer reference til repository, saa controlleren kan oprette og finde brugere.
-    }
+    // @Autowired: Spring indsaetter BrugerJdbcRepository automatisk (dependency injection).
+    // Bruges til at gemme og hente brugere fra databasen via SQL (JdbcTemplate).
+    @Autowired
+    private BrugerJdbcRepository brugerJdbcRepository;
 
     @GetMapping("/signup")
     // Endpoint: GET /signup

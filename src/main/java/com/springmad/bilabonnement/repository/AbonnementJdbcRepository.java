@@ -1,6 +1,7 @@
 package com.springmad.bilabonnement.repository;
 
 import com.springmad.bilabonnement.model.AbonnementOversigt;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -15,11 +16,9 @@ import java.util.List;
 @Repository
 public class AbonnementJdbcRepository {
 
-    private final JdbcTemplate jdbcTemplate;
-
-    public AbonnementJdbcRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    // @Autowired: Spring indsaetter JdbcTemplate automatisk (dependency injection).
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     // Henter en oversigt over alle abonnementer med JOIN på kunder og biler.
     public List<AbonnementOversigt> findAlleMedJoin() {

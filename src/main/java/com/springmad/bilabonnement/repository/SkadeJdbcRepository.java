@@ -1,5 +1,6 @@
 package com.springmad.bilabonnement.repository;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -12,11 +13,9 @@ import java.util.Map;
 @Repository
 public class SkadeJdbcRepository {
 
-    private final JdbcTemplate jdbcTemplate;
-
-    public SkadeJdbcRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    // @Autowired: Spring indsaetter JdbcTemplate automatisk (dependency injection).
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     // Gemmer flere skader på samme abonnement (én række pr. skade med sin egen pris)
     public void opretSkader(int abonnementId, List<String> beskrivelser, List<BigDecimal> priser) {

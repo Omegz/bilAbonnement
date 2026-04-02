@@ -149,9 +149,9 @@ sequenceDiagram
 |---|---|
 | `@Service` | Markerer klassen som en service |
 | `@Autowired` | Spring indsaetter dependencies automatisk (dependency injection) |
-| Singleton pattern | RolleDefinitioner — een instans med alle roller og statusser |
-| HashSet | Bruges i SkadeService til at fange duplikerede skadebeskrivelser |
-| HashMap | Bruges i ForretningService til at taelle abonnementer per status |
+| Singleton pattern | [`RolleDefinitioner`](src/main/java/com/springmad/bilabonnement/model/RolleDefinitioner.java) — een instans med alle roller og statusser |
+| HashSet | Bruges i [`SkadeService`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java) til at fange duplikerede skadebeskrivelser |
+| HashMap | Bruges i [`ForretningService`](src/main/java/com/springmad/bilabonnement/service/ForretningService.java) til at taelle abonnementer per status |
 | try/catch | Haandterer exceptions saa programmet ikke crasher |
 
 ### Repository-laget
@@ -174,8 +174,8 @@ sequenceDiagram
 |---|---|
 | Plain POJO | Simpelt Java-objekt med felter, getters og setters |
 | Tom konstruktoer | Kraeves af Spring til formular-binding og JDBC mapping |
-| Singleton (RolleDefinitioner) | Privat konstruktoer + getInstance() = een instans |
-| TreeSet | Bruges i BilController til unikke sorterede aargange |
+| Singleton ([`RolleDefinitioner`](src/main/java/com/springmad/bilabonnement/model/RolleDefinitioner.java)) | Privat konstruktoer + getInstance() = een instans |
+| TreeSet | Bruges i [`BilController`](src/main/java/com/springmad/bilabonnement/controller/BilController.java) til unikke sorterede aargange |
 
 ### View-laget (templates)
 
@@ -198,49 +198,49 @@ sequenceDiagram
 
 | Fil | Taler med services | Endpoints |
 |---|---|---|
-| `PageController` | Ingen (statiske sider) | GET `/`, GET `/about` |
-| `AuthController` | BrugerService | GET/POST `/login`, GET/POST `/signup`, GET `/logout` |
-| `BilController` | BilService | GET/POST `/biler` |
-| `KundeController` | KundeService | GET/POST `/kunder` |
-| `AbonnementController` | AbonnementService, BilService | GET/POST `/abonnementer`, GET/POST `/abonnementer/opret` |
-| `DataregistreringController` | AbonnementService, BilService, KundeService, BrugerService | GET/POST `/data/lejeaftale/opret` |
-| `ForretningController` | ForretningService, BrugerService | GET `/dashboard`, POST `/dashboard/refresh` |
-| `SkadeController` | SkadeService, KundeService, BrugerService | GET/POST `/skader/opret` |
+| [`PageController`](src/main/java/com/springmad/bilabonnement/controller/PageController.java) | Ingen (statiske sider) | GET `/`, GET `/about` |
+| [`AuthController`](src/main/java/com/springmad/bilabonnement/controller/AuthController.java) | [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | GET/POST `/login`, GET/POST `/signup`, GET `/logout` |
+| [`BilController`](src/main/java/com/springmad/bilabonnement/controller/BilController.java) | [`BilService`](src/main/java/com/springmad/bilabonnement/service/BilService.java) | GET/POST `/biler` |
+| [`KundeController`](src/main/java/com/springmad/bilabonnement/controller/KundeController.java) | [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java) | GET/POST `/kunder` |
+| [`AbonnementController`](src/main/java/com/springmad/bilabonnement/controller/AbonnementController.java) | [`AbonnementService`](src/main/java/com/springmad/bilabonnement/service/AbonnementService.java), [`BilService`](src/main/java/com/springmad/bilabonnement/service/BilService.java) | GET/POST `/abonnementer`, GET/POST `/abonnementer/opret` |
+| [`DataregistreringController`](src/main/java/com/springmad/bilabonnement/controller/DataregistreringController.java) | [`AbonnementService`](src/main/java/com/springmad/bilabonnement/service/AbonnementService.java), [`BilService`](src/main/java/com/springmad/bilabonnement/service/BilService.java), [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java), [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | GET/POST `/data/lejeaftale/opret` |
+| [`ForretningController`](src/main/java/com/springmad/bilabonnement/controller/ForretningController.java) | [`ForretningService`](src/main/java/com/springmad/bilabonnement/service/ForretningService.java), [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | GET `/dashboard`, POST `/dashboard/refresh` |
+| [`SkadeController`](src/main/java/com/springmad/bilabonnement/controller/SkadeController.java) | [`SkadeService`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java), [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java), [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | GET/POST `/skader/opret` |
 
 ### Services (6 filer)
 
 | Fil | Taler med repositories | Forretningslogik |
 |---|---|---|
-| `BrugerService` | BrugerJdbcRepository | Login, signup |
-| `BilService` | BilRepository | Hent og gem biler |
-| `KundeService` | KundeJdbcRepository | Hent og opret kunder |
-| `AbonnementService` | AbonnementJdbcRepository | Opret abonnement med validering |
-| `ForretningService` | ForretningJdbcRepository | KPI-data og rapporter |
-| `SkadeService` | SkadeJdbcRepository, AbonnementJdbcRepository | Skadevalidering (HashSet) og oprettelse |
+| [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | [`BrugerJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/BrugerJdbcRepository.java) | Login, signup |
+| [`BilService`](src/main/java/com/springmad/bilabonnement/service/BilService.java) | [`BilRepository`](src/main/java/com/springmad/bilabonnement/repository/BilRepository.java) | Hent og gem biler |
+| [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java) | [`KundeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java) | Hent og opret kunder |
+| [`AbonnementService`](src/main/java/com/springmad/bilabonnement/service/AbonnementService.java) | [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) | Opret abonnement med validering |
+| [`ForretningService`](src/main/java/com/springmad/bilabonnement/service/ForretningService.java) | [`ForretningJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/ForretningJdbcRepository.java) | KPI-data og rapporter |
+| [`SkadeService`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java) | [`SkadeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/SkadeJdbcRepository.java), [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) | Skadevalidering (HashSet) og oprettelse |
 
 ### Repositories (6 filer)
 
 | Fil | Tabel i databasen | Teknologi |
 |---|---|---|
-| `BrugerJdbcRepository` | brugere | JdbcTemplate, RowMapper |
-| `BilRepository` | biler | JdbcTemplate, RowMapper |
-| `KundeJdbcRepository` | kunder | JdbcTemplate, RowMapper |
-| `AbonnementJdbcRepository` | abonnementer | JdbcTemplate, RowMapper, JOIN |
-| `ForretningJdbcRepository` | abonnementer (KPI) | JdbcTemplate, HashMap, COUNT, SUM |
-| `SkadeJdbcRepository` | skader | JdbcTemplate, LinkedList, Iterator |
+| [`BrugerJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/BrugerJdbcRepository.java) | brugere | JdbcTemplate, RowMapper |
+| [`BilRepository`](src/main/java/com/springmad/bilabonnement/repository/BilRepository.java) | biler | JdbcTemplate, RowMapper |
+| [`KundeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java) | kunder | JdbcTemplate, RowMapper |
+| [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) | abonnementer | JdbcTemplate, RowMapper, JOIN |
+| [`ForretningJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/ForretningJdbcRepository.java) | abonnementer (KPI) | JdbcTemplate, HashMap, COUNT, SUM |
+| [`SkadeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/SkadeJdbcRepository.java) | skader | JdbcTemplate, LinkedList, Iterator |
 
 ### Models (8 filer)
 
 | Fil | Hvad den repraesenterer |
 |---|---|
-| `Bil` | En bil i systemet |
-| `Kunde` | En kunde |
-| `Bruger` | En medarbejder (login + rolle) |
+| [`Bil`](src/main/java/com/springmad/bilabonnement/model/Bil.java) | En bil i systemet |
+| [`Kunde`](src/main/java/com/springmad/bilabonnement/model/Kunde.java) | En kunde |
+| [`Bruger`](src/main/java/com/springmad/bilabonnement/model/Bruger.java) | En medarbejder (login + rolle) |
 | `Abonnement` | Et abonnement |
 | `AbonnementOversigt` | DTO til visning (JOIN resultat) |
 | `AbonnementOption` | DTO til dropdown i skade-modul |
 | `LejeaftaleForm` | Formular-binding til lejeaftale-oprettelse |
-| `RolleDefinitioner` | Singleton med alle roller, statusser og kontrakttyper |
+| [`RolleDefinitioner`](src/main/java/com/springmad/bilabonnement/model/RolleDefinitioner.java) | Singleton med alle roller, statusser og kontrakttyper |
 
 ---
 
@@ -250,5 +250,5 @@ sequenceDiagram
 |---|---|---|
 | **Separation of concerns** | Hvert lag har eet ansvar | Controller = HTTP, Service = logik, Repository = database |
 | **Dependency injection** | Spring opretter og indsaetter objekter automatisk | `@Autowired` paa service-felter i controlleren |
-| **Singleton pattern** | Een instans af RolleDefinitioner i hele systemet | `RolleDefinitioner.getInstance()` |
+| **Singleton pattern** | Een instans af [`RolleDefinitioner`](src/main/java/com/springmad/bilabonnement/model/RolleDefinitioner.java) i hele systemet | `RolleDefinitioner.getInstance()` |
 | **MVC pattern** | Model-View-Controller adskiller data, visning og logik | Model = POJO, View = Thymeleaf, Controller = @Controller |

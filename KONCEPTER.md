@@ -363,7 +363,7 @@ De erstatter XML-konfiguration og goer koden enklere.
 | Annotation | Hvad den goer | Hvor vi bruger den |
 |---|---|---|
 | `@Controller` | Markerer en klasse der haandterer HTTP-requests og returnerer **HTML views** | Alle controllers (BilController, AuthController osv.) |
-| `@RestController` | Markerer en klasse der returnerer **data (JSON)** i stedet for HTML | ApiController (`/api/biler`, `/api/kunder`, `/api/dashboard`) |
+| `@RestController` | Markerer en klasse der returnerer **data (JSON)** i stedet for HTML | [`ApiController`](src/main/java/com/springmad/bilabonnement/controller/ApiController.java) (`/api/biler`, `/api/kunder`, `/api/dashboard`) |
 | `@Service` | Markerer en klasse som forretningslogik-lag | Alle services (BilService, KundeService osv.) |
 | `@Repository` | Markerer en klasse som databaseadgangs-lag | Alle repositories (BilRepository, KundeJdbcRepository osv.) |
 | `@Autowired` | Spring indsaetter en dependency automatisk (dependency injection) | Alle felter i controllers, services og repositories |
@@ -505,34 +505,137 @@ Vi skriver aldrig `new` for nogen af disse objekter. Spring goer det hele.
 
 | Lag | Klasse | Hvad der injiceres | Hvorfor |
 |---|---|---|---|
-| Controller | BilController | BilService | Controller taler med service |
-| Controller | KundeController | KundeService | Controller taler med service |
-| Controller | AuthController | BrugerService | Controller taler med service |
-| Controller | AbonnementController | AbonnementService, BilService | Controller taler med services |
-| Controller | DataregistreringController | AbonnementService, BilService, KundeService, BrugerService | Controller taler med services |
-| Controller | ForretningController | ForretningService, BrugerService | Controller taler med services |
-| Controller | SkadeController | SkadeService, KundeService, BrugerService | Controller taler med services |
-| Controller | ApiController | BilService, KundeService, ForretningService | RestController taler med services |
-| Service | BilService | BilRepository | Service taler med repository |
-| Service | KundeService | KundeJdbcRepository | Service taler med repository |
-| Service | BrugerService | BrugerJdbcRepository | Service taler med repository |
-| Service | AbonnementService | AbonnementJdbcRepository | Service taler med repository |
-| Service | ForretningService | ForretningJdbcRepository | Service taler med repository |
-| Service | SkadeService | SkadeJdbcRepository, AbonnementJdbcRepository | Service taler med repositories |
-| Repository | BilRepository | JdbcTemplate | Repository taler med database |
-| Repository | KundeJdbcRepository | JdbcTemplate | Repository taler med database |
-| Repository | BrugerJdbcRepository | JdbcTemplate | Repository taler med database |
-| Repository | AbonnementJdbcRepository | JdbcTemplate | Repository taler med database |
-| Repository | ForretningJdbcRepository | JdbcTemplate | Repository taler med database |
-| Repository | SkadeJdbcRepository | JdbcTemplate | Repository taler med database |
+| Controller | [`BilController`](src/main/java/com/springmad/bilabonnement/controller/BilController.java) | [`BilService`](src/main/java/com/springmad/bilabonnement/service/BilService.java) | Controller taler med service |
+| Controller | [`KundeController`](src/main/java/com/springmad/bilabonnement/controller/KundeController.java) | [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java) | Controller taler med service |
+| Controller | [`AuthController`](src/main/java/com/springmad/bilabonnement/controller/AuthController.java) | [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | Controller taler med service |
+| Controller | [`AbonnementController`](src/main/java/com/springmad/bilabonnement/controller/AbonnementController.java) | [`AbonnementService`](src/main/java/com/springmad/bilabonnement/service/AbonnementService.java), [`BilService`](src/main/java/com/springmad/bilabonnement/service/BilService.java) | Controller taler med services |
+| Controller | [`DataregistreringController`](src/main/java/com/springmad/bilabonnement/controller/DataregistreringController.java) | [`AbonnementService`](src/main/java/com/springmad/bilabonnement/service/AbonnementService.java), [`BilService`](src/main/java/com/springmad/bilabonnement/service/BilService.java), [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java), [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | Controller taler med services |
+| Controller | [`ForretningController`](src/main/java/com/springmad/bilabonnement/controller/ForretningController.java) | [`ForretningService`](src/main/java/com/springmad/bilabonnement/service/ForretningService.java), [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | Controller taler med services |
+| Controller | [`SkadeController`](src/main/java/com/springmad/bilabonnement/controller/SkadeController.java) | [`SkadeService`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java), [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java), [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | Controller taler med services |
+| Controller | [`ApiController`](src/main/java/com/springmad/bilabonnement/controller/ApiController.java) | [`BilService`](src/main/java/com/springmad/bilabonnement/service/BilService.java), [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java), [`ForretningService`](src/main/java/com/springmad/bilabonnement/service/ForretningService.java) | RestController taler med services |
+| Service | [`BilService`](src/main/java/com/springmad/bilabonnement/service/BilService.java) | [`BilRepository`](src/main/java/com/springmad/bilabonnement/repository/BilRepository.java) | Service taler med repository |
+| Service | [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java) | [`KundeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java) | Service taler med repository |
+| Service | [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | [`BrugerJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/BrugerJdbcRepository.java) | Service taler med repository |
+| Service | [`AbonnementService`](src/main/java/com/springmad/bilabonnement/service/AbonnementService.java) | [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) | Service taler med repository |
+| Service | [`ForretningService`](src/main/java/com/springmad/bilabonnement/service/ForretningService.java) | [`ForretningJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/ForretningJdbcRepository.java) | Service taler med repository |
+| Service | [`SkadeService`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java) | [`SkadeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/SkadeJdbcRepository.java), [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) | Service taler med repositories |
+| Repository | [`BilRepository`](src/main/java/com/springmad/bilabonnement/repository/BilRepository.java) | JdbcTemplate | Repository taler med database |
+| Repository | [`KundeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java) | JdbcTemplate | Repository taler med database |
+| Repository | [`BrugerJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/BrugerJdbcRepository.java) | JdbcTemplate | Repository taler med database |
+| Repository | [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) | JdbcTemplate | Repository taler med database |
+| Repository | [`ForretningJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/ForretningJdbcRepository.java) | JdbcTemplate | Repository taler med database |
+| Repository | [`SkadeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/SkadeJdbcRepository.java) | JdbcTemplate | Repository taler med database |
 
 ### Hvor bruger vi IKKE @Autowired?
 
 | Klasse | Hvorfor ingen @Autowired |
 |---|---|
-| PageController | Har ingen afhaengigheder — returnerer kun view-navne ("index", "about") |
-| Bil, Kunde, Bruger (models) | Er POJO'er — de er ikke Spring-styrede, de oprettes med `new` i controllers |
-| RolleDefinitioner (Singleton) | Styres af Singleton-patternet (privat konstruktoer + getInstance()), ikke af Spring |
+| [`PageController`](src/main/java/com/springmad/bilabonnement/controller/PageController.java) | Har ingen afhaengigheder — returnerer kun view-navne ("index", "about") |
+| [`Bil`](src/main/java/com/springmad/bilabonnement/model/Bil.java), [`Kunde`](src/main/java/com/springmad/bilabonnement/model/Kunde.java), [`Bruger`](src/main/java/com/springmad/bilabonnement/model/Bruger.java) (models) | Er POJO'er — de er ikke Spring-styrede, de oprettes med `new` i controllers |
+| [`RolleDefinitioner`](src/main/java/com/springmad/bilabonnement/model/RolleDefinitioner.java) (Singleton) | Styres af Singleton-patternet (privat konstruktoer + getInstance()), ikke af Spring |
+
+---
+
+## ResultSet, RowMapper og BeanPropertyRowMapper
+
+Naar vi henter data fra databasen med JdbcTemplate, faar vi et **ResultSet** tilbage.
+ResultSet er raekker af raa data — vi skal konvertere dem til Java-objekter.
+Det goer vi med en **RowMapper**.
+
+### ResultSet
+
+Et objekt i Java (JDBC) der repraesenterer data hentet fra databasen via en SQL-query.
+Hver raekke i ResultSet svarer til een raekke i databasetabellen.
+
+Man henter vaerdier manuelt med `rs.getXxx()` metoder.
+
+**Faktisk kode fra BilRepository.java:**
+```java
+// Fra BilRepository — vi henter HVERT felt fra ResultSet manuelt:
+private final RowMapper<Bil> bilRowMapper = (rs, rowNum) -> {
+    Bil bil = new Bil();
+    bil.setId(rs.getInt("id"));
+    bil.setNavn(rs.getString("navn"));
+    bil.setAar(rs.getInt("aar"));
+    bil.setStartsdato(rs.getDate("startsdato") != null ? rs.getDate("startsdato").toLocalDate() : null);
+    bil.setSlutsdato(rs.getDate("slutsdato") != null ? rs.getDate("slutsdato").toLocalDate() : null);
+    return bil;
+};
+```
+
+### RowMapper (manuel)
+
+Et interface som kortlaegger HVER raekke i ResultSet til et Java-objekt.
+Man skriver selv mapping-koden for hvert felt.
+
+**Bruges i:** [`BilRepository`](src/main/java/com/springmad/bilabonnement/repository/BilRepository.java), [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java)
+
+**Faktisk kode fra BilRepository.java:**
+```java
+// Fra BilRepository.findAll():
+public List<Bil> findAll() {
+    String sql = "SELECT id, navn, aar, startsdato, slutsdato FROM biler";
+    return jdbc.query(sql, bilRowMapper);
+}
+```
+
+**Hvornaar bruger man manuel RowMapper?**
+- Naar man skal konvertere typer (fx `java.sql.Date` til `LocalDate` som i BilRepository)
+- Naar kolonnenavne i SQL'en IKKE matcher feltnavne (fx aliaser i JOIN-queries)
+- Naar man vil have fuld kontrol over mappingen
+
+### BeanPropertyRowMapper (automatisk)
+
+En standard-implementering af RowMapper som AUTOMATISK mapper kolonner til felter.
+Den matcher kolonnenavne med getters/setters i Java-klassen.
+
+**Bruges i:** [`KundeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java), [`BrugerJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/BrugerJdbcRepository.java)
+
+**Faktisk kode fra KundeJdbcRepository.java:**
+```java
+// Fra KundeJdbcRepository.findAll():
+// Kolonner: id, navn, email, telefon -> matcher setId(), setNavn(), setEmail(), setTelefon()
+public List<Kunde> findAll() {
+    String sql = "SELECT id, navn, email, telefon FROM kunder";
+    return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Kunde.class));
+}
+```
+
+**Faktisk kode fra BrugerJdbcRepository.java:**
+```java
+// Fra BrugerJdbcRepository.findByNavnOgPassword():
+// Kolonner: id, navn, alder, rolle, password -> matcher setId(), setNavn(), setAlder(), setRolle(), setPassword()
+public Bruger findByNavnOgPassword(String navn, String password) {
+    String sql = "SELECT id, navn, alder, rolle, password FROM brugere WHERE navn = ? AND password = ? LIMIT 1";
+    List<Bruger> resultater = jdbcTemplate.query(sql,
+            new BeanPropertyRowMapper<>(Bruger.class),
+            navn, password);
+    return resultater.stream().findFirst().orElse(null);
+}
+```
+
+**Hvornaar bruger man BeanPropertyRowMapper?**
+- Naar kolonnenavne i databasen MATCHER feltnavne i Java-klassen
+- Naar Java-klassen har en tom konstruktoer og getters/setters
+- Naar man vil spare tid og skrive mindre kode
+
+### Sammenligning
+
+| | Manuel RowMapper | BeanPropertyRowMapper |
+|---|---|---|
+| **Kode** | Man skriver `rs.getXxx()` for hvert felt | Automatisk — ingen mapping-kode |
+| **Fleksibilitet** | Fuld kontrol over konvertering | Kraever matchende navne |
+| **Fejlrisiko** | Stavefejl i kolonnenavne mulig | Ingen — Spring matcher automatisk |
+| **Bruges naar** | Navne ikke matcher, eller man skal konvertere typer | Navne matcher direkte |
+
+### Hvor i projektet?
+
+| Repository | Mapping-metode | Hvorfor |
+|---|---|---|
+| [`KundeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java) | BeanPropertyRowMapper | Kolonner (`id`, `navn`, `email`, `telefon`) matcher felter direkte |
+| [`BrugerJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/BrugerJdbcRepository.java) | BeanPropertyRowMapper | Kolonner (`id`, `navn`, `alder`, `rolle`, `password`) matcher felter direkte |
+| [`BilRepository`](src/main/java/com/springmad/bilabonnement/repository/BilRepository.java) | Manuel RowMapper | `rs.getDate().toLocalDate()` kraever manuel type-konvertering |
+| [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) | Manuel RowMapper | JOIN-query med aliaser (`kunde_navn`, `bil_navn`) matcher ikke felter |
 
 ---
 
@@ -545,15 +648,19 @@ Vi skriver aldrig `new` for nogen af disse objekter. Spring goer det hele.
 | Repository taler kun med Database | Ja — via JdbcTemplate og SQL |
 | Model bruges af alle lag | Ja — POJO'er deles paa tvaers |
 | Packages er organiseret (controller, service, repository, model) | Ja |
-| Static mappen indeholder CSS | Ja — `static/css/style.css` (1 ekstern fil) |
+| Static mappen indeholder CSS | Ja — [`style.css`](src/main/resources/static/css/style.css) (1 ekstern fil) |
 | Template mappen indeholder Thymeleaf HTML | Ja — 13 templates + fragments |
-| CSS er external (ikke inline) | Ja — alle templates linker til `style.css`, nul `<style>` blokke |
+| CSS er external (ikke inline) | Ja — alle templates linker til [`style.css`](src/main/resources/static/css/style.css), nul `<style>` blokke |
 | @Controller bruges til HTML views | Ja — 7 controllers returnerer Thymeleaf templates |
-| @RestController bruges til JSON data | Ja — ApiController returnerer JSON paa `/api/*` |
-| @PathVariable bruges til URL-sti vaerdier | Ja — `KundeController: /kunder/slet/{id}` |
+| @RestController bruges til JSON data | Ja — [`ApiController`](src/main/java/com/springmad/bilabonnement/controller/ApiController.java) returnerer JSON paa `/api/*` |
+| @PathVariable bruges til URL-sti vaerdier | Ja — [`KundeController`](src/main/java/com/springmad/bilabonnement/controller/KundeController.java): `/kunder/slet/{id}` |
 | @RequestParam bruges til query-parametre | Ja — login, skade-filtrering, abonnement-opret |
 | @ModelAttribute bruges til formular-binding | Ja — opret bil, opret kunde, signup |
 | @GetMapping og @PostMapping bruges korrekt | Ja — GET henter data, POST opretter data |
-| Passwords er i .env (ikke i koden) | Ja — `application.properties` laeser fra miljoevariabler |
+| ResultSet og RowMapper bruges til database-mapping | Ja — i [`BilRepository`](src/main/java/com/springmad/bilabonnement/repository/BilRepository.java), [`BrugerJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/BrugerJdbcRepository.java), [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) |
+| BeanPropertyRowMapper bruges til automatisk mapping | Ja — i [`KundeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java) og [`BrugerJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/BrugerJdbcRepository.java) |
+| LinkedList og Iterator bruges til indsaettelse | Ja — i [`SkadeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/SkadeJdbcRepository.java) |
+| Git bruges til versionskontrol | Ja — projektet er et Git-repository |
+| Passwords er i .env (ikke i koden) | Ja — [`application.properties`](src/main/resources/application.properties) laeser fra miljoevariabler |
 | @Autowired bruges til dependency injection | Ja — paa alle felter i controllers, services og repositories |
-| Singleton bruges til delte definitioner | Ja — `RolleDefinitioner.getInstance()` |
+| Singleton bruges til delte definitioner | Ja — [`RolleDefinitioner`](src/main/java/com/springmad/bilabonnement/model/RolleDefinitioner.java)`.getInstance()` |

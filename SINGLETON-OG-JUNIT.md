@@ -21,7 +21,7 @@ Tre ting arbejder sammen:
 
 ### Hvor bruger vi Singleton i projektet?
 
-**Klasse:** `RolleDefinitioner` (i `model/RolleDefinitioner.java`)
+**Klasse:** [`RolleDefinitioner`](src/main/java/com/springmad/bilabonnement/model/RolleDefinitioner.java) (i `model/RolleDefinitioner.java`)
 
 **Problemet UDEN Singleton:**
 Roller som "DATAREGISTRERING" og "SKADE_OG_UDBEDRING" var hardcodet som strenge i 3 forskellige controllers.
@@ -65,12 +65,12 @@ if (!RolleDefinitioner.getInstance().getRolleDataregistrering().equals(medarbejd
 
 | Fil | Hvad den henter fra Singleton |
 |---|---|
-| `DataregistreringController` | `getRolleDataregistrering()`, `getKontraktLimited()` |
-| `SkadeController` | `getRolleSkadeOgUdbedring()` |
-| `ForretningController` | `getRolleForretning()` |
-| `AbonnementJdbcRepository` | `getStatusAktiv()` (i SQL queries og INSERT) |
-| `ForretningJdbcRepository` | `getStatusAktiv()` (i KPI queries) |
-| `BrugerTest` | `getRolleDataregistrering()`, `getRolleSkadeOgUdbedring()`, `getRolleForretning()` |
+| [`DataregistreringController`](src/main/java/com/springmad/bilabonnement/controller/DataregistreringController.java) | `getRolleDataregistrering()`, `getKontraktLimited()` |
+| [`SkadeController`](src/main/java/com/springmad/bilabonnement/controller/SkadeController.java) | `getRolleSkadeOgUdbedring()` |
+| [`ForretningController`](src/main/java/com/springmad/bilabonnement/controller/ForretningController.java) | `getRolleForretning()` |
+| [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) | `getStatusAktiv()` (i SQL queries og INSERT) |
+| [`ForretningJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/ForretningJdbcRepository.java) | `getStatusAktiv()` (i KPI queries) |
+| [`BrugerTest`](src/test/java/com/springmad/bilabonnement/model/BrugerTest.java) | `getRolleDataregistrering()`, `getRolleSkadeOgUdbedring()`, `getRolleForretning()` |
 
 ### Hvorfor Singleton her og ikke bare static variabler?
 
@@ -100,9 +100,9 @@ Den tester en **unit** (metode) ad gangen.
 
 **Vigtigt:** `assertEquals` tjekker **vaerdi**, `assertSame` tjekker **objekt-reference** (samme sted i hukommelsen).
 
-### Testklasse 1: RolleDefinitionerTest
+### Testklasse 1: [`RolleDefinitionerTest`](src/test/java/com/springmad/bilabonnement/model/RolleDefinitionerTest.java)
 
-**Fil:** `src/test/java/.../model/RolleDefinitionerTest.java`
+**Fil:** [`src/test/java/.../model/RolleDefinitionerTest.java`](src/test/java/com/springmad/bilabonnement/model/RolleDefinitionerTest.java)
 
 **5 tests der dækker Singleton-patternet:**
 
@@ -114,9 +114,9 @@ Den tester en **unit** (metode) ad gangen.
 | `statusser_harKorrekteVaerdier` | At AKTIV/AFSLUTTET er korrekte | `assertEquals` |
 | `kontraktTyper_harKorrekteVaerdier` | At LIMITED/UNLIMITED er korrekte | `assertEquals` |
 
-### Testklasse 2: AbonnementServiceTest
+### Testklasse 2: [`AbonnementServiceTest`](src/test/java/com/springmad/bilabonnement/service/AbonnementServiceTest.java)
 
-**Fil:** `src/test/java/.../service/AbonnementServiceTest.java`
+**Fil:** [`src/test/java/.../service/AbonnementServiceTest.java`](src/test/java/com/springmad/bilabonnement/service/AbonnementServiceTest.java)
 
 **3 tests der dækker forretningslogik (happy flow + exception flow):**
 
@@ -149,7 +149,7 @@ I VS Code: tryk paa den groenne "play" knap ved siden af en testmetode (kraever 
 
 ### Alle 26 tests i projektet
 
-#### RolleDefinitionerTest (5 tests — Singleton)
+#### [`RolleDefinitionerTest`](src/test/java/com/springmad/bilabonnement/model/RolleDefinitionerTest.java) (5 tests — Singleton)
 
 | # | Testmetode | Assert | Hvad den tester |
 |---|---|---|---|
@@ -159,7 +159,7 @@ I VS Code: tryk paa den groenne "play" knap ved siden af en testmetode (kraever 
 | 4 | `statusser_harKorrekteVaerdier` | `assertEquals` | AKTIV, AFSLUTTET |
 | 5 | `kontraktTyper_harKorrekteVaerdier` | `assertEquals` | LIMITED, UNLIMITED |
 
-#### BilTest (4 tests — Model getters/setters)
+#### [`BilTest`](src/test/java/com/springmad/bilabonnement/model/BilTest.java) (4 tests — Model getters/setters)
 
 | # | Testmetode | Assert | Hvad den tester |
 |---|---|---|---|
@@ -168,21 +168,21 @@ I VS Code: tryk paa den groenne "play" knap ved siden af en testmetode (kraever 
 | 8 | `setDatoer_ogGetDatoer_returnererKorrektVaerdi` | `assertEquals` | Start- og slutdato |
 | 9 | `nyBil_harStandardvaerdier` | `assertEquals`, `assertNull` | Ny bil har 0/null vaerdier |
 
-#### KundeTest (2 tests — Model getters/setters)
+#### [`KundeTest`](src/test/java/com/springmad/bilabonnement/model/KundeTest.java) (2 tests — Model getters/setters)
 
 | # | Testmetode | Assert | Hvad den tester |
 |---|---|---|---|
 | 10 | `setOgGet_alleFelter_returnererKorrekteVaerdier` | `assertEquals` | Navn, email, telefon |
 | 11 | `nyKunde_harNullVaerdier` | `assertNull` | Integer-felter er null (ikke 0) |
 
-#### BrugerTest (2 tests — Model + Singleton)
+#### [`BrugerTest`](src/test/java/com/springmad/bilabonnement/model/BrugerTest.java) (2 tests — Model + Singleton)
 
 | # | Testmetode | Assert | Hvad den tester |
 |---|---|---|---|
 | 12 | `setOgGet_alleFelter_returnererKorrekteVaerdier` | `assertEquals` | Navn, alder, rolle, password |
 | 13 | `rolle_kanSaettesTilAlleGyldigeRoller` | `assertEquals` | Alle 3 roller via Singleton |
 
-#### AbonnementServiceTest (3 tests — Forretningslogik med Mockito)
+#### [`AbonnementServiceTest`](src/test/java/com/springmad/bilabonnement/service/AbonnementServiceTest.java) (3 tests — Forretningslogik med Mockito)
 
 | # | Testmetode | Assert | Hvad den tester |
 |---|---|---|---|
@@ -190,7 +190,7 @@ I VS Code: tryk paa den groenne "play" knap ved siden af en testmetode (kraever 
 | 15 | `kundenHarAlleredeAktivtAbonnement` | `assertThrows` | IllegalStateException ved dublet |
 | 16 | `ugyldigtKundenavn` | `assertThrows` | IllegalArgumentException ved tomt navn |
 
-#### SkadeValideringServiceTest (9 tests — Validering med HashSet)
+#### [`SkadeValideringServiceTest`](src/test/java/com/springmad/bilabonnement/service/SkadeServiceTest.java) (9 tests — Validering med HashSet)
 
 | # | Testmetode | Assert | Hvad den tester |
 |---|---|---|---|

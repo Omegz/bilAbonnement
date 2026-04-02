@@ -25,50 +25,114 @@ Der er tre hovedtyper:
 
 **Hvad:** En List der internt bruger et array. Hurtig til at **laese** elementer via index (`get(i)`).
 
-**Hvor i projektet:** `AbonnementJdbcRepository.findAfsluttedeAbonnementer()`
+**Hvor i projektet:** [`AbonnementJdbcRepository.findAfsluttedeAbonnementer()`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java)
 
-**Hvorfor:** Vi bygger en liste af SQL-parametre og laeser den til sidst med `toArray()`. ArrayList er optimal her fordi vi primaert laeser data (hurtig index-adgang).
+**Hvorfor:** Vi bygger en liste af SQL-parametre dynamisk og laeser den til sidst med `toArray()`.
 
+**Faktisk kode fra projektet:**
 ```java
-// ArrayList: hurtig til at laese elementer via index
+// Fra AbonnementJdbcRepository.findAfsluttedeAbonnementer():
 ArrayList<Object> params = new ArrayList<>();
+
 if (kundeId != null) {
+    baseSql += " AND a.kunde_id = ? ";
     params.add(kundeId);
 }
-// toArray() laeser alle elementer - hurtigt med ArrayList
-jdbcTemplate.query(sql, mapper, params.toArray());
-```
 
-**Hvornaar man vaelger ArrayList:**
-- Naar man laeser data ofte (loop, get(i), toArray)
-- Naar man kender ca. antal elementer paa forhaand
-- Standard-valget for de fleste List-behov
+return jdbcTemplate.query(baseSql, mapper, params.toArray());
+```
 
 ---
 
-### LinkedList
+### LinkedList, Noder og Pointers
 
-**Hvad:** En List der internt er en kaede af noder. Hver node har data + en pointer til naeste node. Hurtig til at **tilfoeje og fjerne** elementer.
+**Hvad:** En List der internt er en **kaede af noder**.
 
-**Hvor i projektet:** `SkadeJdbcRepository.opretSkader()`
+En **node** er en byggeblok der indeholder to ting:
+1. **Data** — den faktiske vaerdi (fx en String)
+2. **Pointer** (reference) — en adresse til den **naeste node** i kaeden
 
-**Hvorfor:** Vi tilfoeger skadebeskrivelser een ad gangen og gennemlober dem med en Iterator. LinkedList er optimal naar man laver mange tilfoejelser.
+**Hvor i projektet:** [`SkadeJdbcRepository.opretSkader()`](src/main/java/com/springmad/bilabonnement/repository/SkadeJdbcRepository.java)
 
+Naar en bruger registrerer 3 skader ("Ridse i doer", "Bule i koefanger", "Revne i forrude"),
+bygger vores kode denne LinkedList internt:
+
+```
+Vores LinkedList efter: new LinkedList<>(beskrivelser)
+
+  Node 1                    Node 2                    Node 3
+┌────────────────────┐   ┌────────────────────┐   ┌────────────────────┐
+│ data: "Ridse i doer"│   │ data: "Bule i      │   │ data: "Revne i    │
+│                    │   │        koefanger"  │   │        forrude"   │
+│ next: ────────────────>│ next: ────────────────>│ next: null        │
+└────────────────────┘   └────────────────────┘   └────────────────────┘
+  ^
+  head (foerste node)                                  next = null (sidste)
+```
+
+Hver **node** indeholder:
+- **data**: selve skadebeskrivelsen (en String)
+- **next**: en **pointer** (reference/adresse) til den naeste node i kaeden
+
+Den foerste node hedder **head**. Den sidste node har `next = null` (ingen naeste).
+
+**Hvorfor er det hurtigt at tilfoeje/fjerne?**
+- Man aendrer bare pointeren i noden foer/efter
+- Man behoever IKKE at flytte alle andre elementer (som ArrayList goer)
+
+**ArrayList internt (til sammenligning):**
+```
+ArrayList efter: new ArrayList<>(beskrivelser)
+
+  index:  [0]              [1]                [2]
+  data:   "Ridse i doer"   "Bule i koefanger" "Revne i forrude"
+
+Alle elementer ligger i et array paa raekke.
+Hurtigt at laese (get(1) -> "Bule i koefanger"),
+men langsomt at indsaette MIDT i arrayet (alle elementer skal flyttes).
+```
+
+**Faktisk kode fra SkadeJdbcRepository.opretSkader():**
 ```java
-// LinkedList: hurtig til at tilfoeje elementer
+// Opretter en LinkedList fra de indsendte beskrivelser.
+// Internt bygges kaeden af noder som vist i diagrammet ovenfor.
 LinkedList<String> skadeKoe = new LinkedList<>(beskrivelser);
 
-// Gennemlob med Iterator (se nedenfor)
+// Iterator gennemlober noderne — vi slipper for selv at haandtere pointers.
+// Internt foelger Iterator pointer-kaeden: head -> node2 -> node3 -> null.
 Iterator<String> iterator = skadeKoe.iterator();
-while (iterator.hasNext()) {
-    String beskrivelse = iterator.next();
-    // gem i database...
+int index = 0;
+
+while (iterator.hasNext()) {          // Er der en naeste node? (next != null)
+    String beskrivelse = iterator.next(); // Hent data fra noden, flyt pointer til naeste
+
+    jdbcTemplate.update(sql,
+            abonnementId,
+            beskrivelse,              // "Ridse i doer", saa "Bule i koefanger", saa "Revne i forrude"
+            priser.get(index),
+            LocalDate.now()
+    );
+    index++;
 }
 ```
 
-**Hvornaar man vaelger LinkedList:**
-- Naar man ofte tilfojer eller fjerner elementer
-- Naar man ikke har brug for hurtig index-adgang
+**Hvad sker der i koden trin for trin:**
+```
+Trin 1: iterator.hasNext() -> true  (node 1 har next != null)
+        iterator.next()    -> "Ridse i doer"  (henter data fra node 1)
+        INSERT INTO skader ... "Ridse i doer"
+
+Trin 2: iterator.hasNext() -> true  (node 2 har next != null)
+        iterator.next()    -> "Bule i koefanger"  (henter data fra node 2)
+        INSERT INTO skader ... "Bule i koefanger"
+
+Trin 3: iterator.hasNext() -> true  (node 3 eksisterer)
+        iterator.next()    -> "Revne i forrude"  (henter data fra node 3)
+        INSERT INTO skader ... "Revne i forrude"
+
+Trin 4: iterator.hasNext() -> false (node 3 har next = null, ingen flere)
+        while-loop stopper
+```
 
 **Sammenligning:**
 
@@ -80,56 +144,79 @@ while (iterator.hasNext()) {
 
 ---
 
+## Iterator
+
+**Hvad:** Et objekt der bruges til at gennemlobe en samling (collection)
+uden selv at haandtere noder og pointers.
+
+Naar vi har en LinkedList, er data gemt i noder forbundet med pointers.
+Uden Iterator skulle vi selv foelge pointer-kaeden (`node.next.next...`).
+Iterator **skjuler** den kompleksitet — vi kalder bare `hasNext()` og `next()`.
+
+**Hvor i projektet:** [`SkadeJdbcRepository.opretSkader()`](src/main/java/com/springmad/bilabonnement/repository/SkadeJdbcRepository.java)
+
+**Tre vigtige metoder:**
+
+| Metode | Hvad den goer | Hvad der sker internt i LinkedList |
+|--------|--------------|------|
+| `hasNext()` | Returnerer `true` hvis der er flere elementer | Tjekker om nuvaerende nodes `next` pointer != null |
+| `next()` | Returnerer det naeste element | Henter `data` fra noden, flytter intern pointer til `next` |
+| `remove()` | Fjerner det sidst hentede element sikkert | Opdaterer pointers saa noden springes over i kaeden |
+
+**Hvorfor Iterator i stedet for en for-loop?**
+- En for-each loop (`for (String x : liste)`) virker fint til at laese
+- Men hvis man fjerner elementer under iteration, faar man `ConcurrentModificationException`
+- Iterator's `remove()` metode undgaar dette problem fordi den opdaterer pointerne korrekt
+
+---
+
 ## Set-implementeringer
 
 ### HashSet
 
-**Hvad:** En Set der bruger hashing internt. Ingen dubletter, ingen garanteret raekkefoelge, men meget hurtig til opslag.
+**Hvad:** En Set der bruger hashing internt. Ingen dubletter, ingen garanteret raekkefoelge, meget hurtig opslag.
 
-**Hvor i projektet:** `SkadeController.gyldigSkadeliste()`
+**Hvor i projektet:** [`SkadeService.gyldigSkadeliste()`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java)
 
-**Hvorfor:** Vi tjekker om brugeren har skrevet den samme skadebeskrivelse to gange. HashSet fanger dubletter automatisk fordi `add()` returnerer `false` naar vaerdien allerede findes.
+**Hvorfor:** Fanger duplikerede skadebeskrivelser. `add()` returnerer `false` naar vaerdien allerede findes.
 
+**Faktisk kode fra projektet:**
 ```java
-// HashSet: ingen dubletter, hurtig via hashing
+// Fra SkadeService.gyldigSkadeliste():
 HashSet<String> setBeskrivelser = new HashSet<>();
 
-for (String beskrivelse : beskrivelser) {
-    boolean erNy = setBeskrivelser.add(beskrivelse);
+for (int i = 0; i < beskrivelser.size(); i++) {
+    if (beskrivelser.get(i).isBlank()) return false;
+    if (priser.get(i) == null || priser.get(i).signum() <= 0) return false;
+
+    boolean erNy = setBeskrivelser.add(beskrivelser.get(i));
     if (!erNy) {
-        // Duplikat fundet! add() returnerede false
-        return false;
+        return false;  // Duplikat fundet
     }
 }
+return true;
 ```
-
-**Hvornaar man vaelger HashSet:**
-- Naar man vil sikre unikke elementer
-- Naar raekkefoelge ikke er vigtig
-- Naar man har brug for hurtige opslag (contains, add)
 
 ---
 
 ### TreeSet
 
-**Hvad:** En Set der bruger et traee (roed-sort-traee) internt. Ingen dubletter, men elementerne er altid **sorteret**.
+**Hvad:** En Set der bruger et traee (roed-sort-traee) internt. Ingen dubletter, altid **sorteret**.
 
-**Hvor i projektet:** `BilController.bilerPage()`
+**Hvor i projektet:** [`BilController.bilerPage()`](src/main/java/com/springmad/bilabonnement/controller/BilController.java)
 
-**Hvorfor:** Vi finder alle unikke aargange fra bilerne. TreeSet sikrer at aargangene baade er unikke OG sorteret (fx 2022, 2023, 2024), saa vi kan vise dem paent i viewet.
+**Hvorfor:** Finder unikke aargange fra bilerne, sorteret automatisk.
 
+**Faktisk kode fra projektet:**
 ```java
-// TreeSet: ingen dubletter + automatisk sortering
+// Fra BilController.bilerPage():
 TreeSet<Integer> unikkeAar = new TreeSet<>();
 for (Bil b : biler) {
     unikkeAar.add(b.getAar());
-    // 2022, 2024, 2022, 2023 -> [2022, 2023, 2024]
 }
+model.addAttribute("unikkeAar", unikkeAar);
+// Resultat: fx [2022, 2023, 2024] — sorteret, ingen dubletter
 ```
-
-**Hvornaar man vaelger TreeSet:**
-- Naar man vil have unikke elementer i sorteret raekkefoelge
-- Lidt langsommere end HashSet (traee vs. hashing)
 
 **Sammenligning:**
 
@@ -146,22 +233,26 @@ for (Bil b : biler) {
 
 ### HashMap
 
-**Hvad:** Gemmer data som noegel-vaerdi par (key-value). Hver noegel er unik, og man kan hurtigt slaa en vaerdi op via noeglen.
+**Hvad:** Gemmer data som noegel-vaerdi par (key-value). Hver noegel er unik.
 
-**Hvor i projektet:** `ForretningJdbcRepository.antalAbonnementerPerStatus()`
+**Hvor i projektet:** [`ForretningJdbcRepository.antalAbonnementerPerStatus()`](src/main/java/com/springmad/bilabonnement/repository/ForretningJdbcRepository.java)
 
-**Hvorfor:** Vi taeller antal abonnementer per status. Noeglen er status-teksten (fx "AKTIV"), vaerdien er antallet. HashMap er perfekt til dette fordi vi laver key-value opslag.
+**Hvorfor:** Taeller antal abonnementer per status. Noeglen er statusteksten, vaerdien er antallet.
 
+**Faktisk kode fra projektet:**
 ```java
-// HashMap: noegel-vaerdi par (key-value)
+// Fra ForretningJdbcRepository.antalAbonnementerPerStatus():
 HashMap<String, Integer> resultat = new HashMap<>();
 
-// put() indsaetter et noegel-vaerdi par
-resultat.put("AKTIV", 5);
-resultat.put("AFSLUTTET", 12);
+for (Map<String, Object> raekke : raekker) {
+    String status = (String) raekke.get("status");
+    int antal = ((Number) raekke.get("antal")).intValue();
 
-// get() henter vaerdien for en noegel
-int aktive = resultat.get("AKTIV");  // -> 5
+    resultat.put(status, antal);
+}
+
+return resultat;
+// Resultat fra databasen: fx {"AKTIV" -> 5, "AFSLUTTET" -> 12}
 ```
 
 **Vigtige Map-metoder:**
@@ -179,46 +270,13 @@ int aktive = resultat.get("AKTIV");  // -> 5
 
 ---
 
-## Iterator
-
-**Hvad:** Et objekt der bruges til at gennemlobe en samling (collection) paa en sikker maade.
-
-**Hvor i projektet:** `SkadeJdbcRepository.opretSkader()`
-
-**Hvorfor:** Vi gennemlober en LinkedList af skadebeskrivelser. Iterator er sikrere end en for-each loop hvis man vil fjerne elementer under iteration (undgaar ConcurrentModificationException).
-
-```java
-// Iterator: sikker gennemlobning af en collection
-Iterator<String> iterator = skadeKoe.iterator();
-
-while (iterator.hasNext()) {       // Er der flere elementer?
-    String element = iterator.next(); // Hent naeste element
-    // iterator.remove();            // Sikker fjernelse (valgfrit)
-}
-```
-
-**Tre vigtige metoder:**
-
-| Metode | Hvad den goer |
-|--------|--------------|
-| `hasNext()` | Returnerer `true` hvis der er flere elementer |
-| `next()` | Returnerer det naeste element |
-| `remove()` | Fjerner det sidst hentede element (sikkert) |
-
-**Hvorfor ikke bare en for-loop?**
-- En for-each loop (`for (X x : liste)`) virker fint til at laese
-- Men hvis man fjerner elementer under iteration, faar man `ConcurrentModificationException`
-- Iterator's `remove()` metode undgaar dette problem
-
----
-
 ## Oversigt: Hvor bruges hvad i projektet?
 
 | Collection | Fil | Metode | Hvorfor |
 |---|---|---|---|
-| **ArrayList** | `AbonnementJdbcRepository` | `findAfsluttedeAbonnementer()` | Bygger SQL-parametre, laeser med `toArray()` |
-| **LinkedList** | `SkadeJdbcRepository` | `opretSkader()` | Tilfojer skader een ad gangen (hurtig add) |
-| **TreeSet** | `BilController` | `bilerPage()` | Unikke + sorterede aargange |
-| **HashSet** | `SkadeController` | `gyldigSkadeliste()` | Fanger duplikerede skadebeskrivelser |
-| **HashMap** | `ForretningJdbcRepository` | `antalAbonnementerPerStatus()` | Taeller abonnementer per status (key-value) |
-| **Iterator** | `SkadeJdbcRepository` | `opretSkader()` | Sikker gennemlobning af LinkedList |
+| **ArrayList** | [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) | `findAfsluttedeAbonnementer()` | Bygger SQL-parametre, laeser med `toArray()` |
+| **LinkedList** | [`SkadeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/SkadeJdbcRepository.java) | `opretSkader()` | Tilfojer skader een ad gangen (hurtig add via noder) |
+| **TreeSet** | [`BilController`](src/main/java/com/springmad/bilabonnement/controller/BilController.java) | `bilerPage()` | Unikke + sorterede aargange |
+| **HashSet** | [`SkadeService`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java) | `gyldigSkadeliste()` | Fanger duplikerede skadebeskrivelser |
+| **HashMap** | [`ForretningJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/ForretningJdbcRepository.java) | `antalAbonnementerPerStatus()` | Taeller abonnementer per status (key-value) |
+| **Iterator** | [`SkadeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/SkadeJdbcRepository.java) | `opretSkader()` | Sikker gennemlobning af LinkedList (skjuler noder/pointers) |

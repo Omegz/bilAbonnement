@@ -12,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
 
 /*
@@ -167,6 +168,7 @@ public class SkadeController {
      *  - Have en beskrivelse
      *  - Have en pris > 0
      *  - Have matchende antal felter
+     *  - Ikke have duplikerede beskrivelser (samme skade registreret to gange)
      */
     private boolean gyldigSkadeliste(List<String> beskrivelser,
                                      List<BigDecimal> priser) {
@@ -175,9 +177,27 @@ public class SkadeController {
         if (beskrivelser.isEmpty()) return false;
         if (beskrivelser.size() != priser.size()) return false;
 
+        // ===== HashSet =====
+        // HashSet er en Set-implementering der:
+        //   - IKKE tillader dubletter (ligesom alle Sets)
+        //   - Bruger hashing internt, saa opslag er meget hurtigt
+        //   - Ingen garanteret raekkefoelge (modsat TreeSet som sorterer)
+        // Vi bruger HashSet her til at fange duplikerede skadebeskrivelser.
+        // Eksempel: hvis brugeren ved en fejl skriver "Ridse i doer" to gange,
+        // vil HashSet opdage det, fordi add() returnerer false naar vaerdien allerede findes.
+        HashSet<String> setBeskrivelser = new HashSet<>();
+
         for (int i = 0; i < beskrivelser.size(); i++) {
             if (beskrivelser.get(i).isBlank()) return false;
             if (priser.get(i) == null || priser.get(i).signum() <= 0) return false;
+
+            // add() returnerer false hvis elementet allerede er i settet (dublet).
+            // Det virker fordi HashSet kalder hashCode() og equals() paa String-objektet.
+            boolean erNy = setBeskrivelser.add(beskrivelser.get(i));
+            if (!erNy) {
+                // Beskrivelsen fandtes allerede -> duplikat -> ugyldig
+                return false;
+            }
         }
         return true;
     }

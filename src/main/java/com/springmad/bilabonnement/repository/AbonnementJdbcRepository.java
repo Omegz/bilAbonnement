@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 // Repository som bruger JdbcTemplate og ren SQL til abonnementer.
@@ -143,8 +144,16 @@ public class AbonnementJdbcRepository {
           AND a.slutdato <= CURDATE()
         """;
 
-        // Liste til valgfrie parametre (kun kundeId)
-        List<Object> params = new java.util.ArrayList<>();
+        // ===== ArrayList =====
+        // ArrayList er en List-implementering der er hurtig til at LAESE elementer via index.
+        // Internt gemmer den data i et array, saa opslag med get(i) er meget hurtigt.
+        // Vi bruger ArrayList her til at bygge en liste af SQL-parametre dynamisk.
+        // Vi tilfojer kun kundeId hvis det er sat, saa listen kan vaere tom eller have 1 element.
+        // ArrayList er det rigtige valg fordi:
+        //   - Vi laeser listen til sidst med toArray() (hurtig index-adgang)
+        //   - Vi tilfojer maks 1 element (ingen forskel til LinkedList ved saa faa elementer,
+        //     men ArrayList er standard-valget naar man primaert laeser data)
+        ArrayList<Object> params = new ArrayList<>();
 
         // Hvis der er valgt kunde, filtrer paa kunde
         if (kundeId != null) {

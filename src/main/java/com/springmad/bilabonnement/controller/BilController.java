@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.List;
+import java.util.TreeSet;
+
 // Controller der haandterer visning og oprettelse af biler.
 // Foelger MVC-princippet: controlleren modtager requests og sender data til viewet.
 @Controller
@@ -27,8 +30,32 @@ public class BilController {
     public String bilerPage(Model model) {
         // Tomt Bil-objekt til Thymeleaf-formularen (data-binding med th:object).
         model.addAttribute("bil", new Bil());
-        // Henter alle biler fra databasen og sender dem til viewet.
-        model.addAttribute("biler", bilRepository.findAll());
+
+        // ===== List =====
+        // List er en ordnet samling der tillader dubletter.
+        // findAll() returnerer en List<Bil> fra databasen.
+        // List har raekkefoelge (foerste bil forbliver foerst), og vi kan have
+        // to biler med samme navn (dubletter er tilladt).
+        List<Bil> biler = bilRepository.findAll();
+        model.addAttribute("biler", biler);
+
+        // ===== TreeSet =====
+        // TreeSet er en Set-implementering der:
+        //   - IKKE tillader dubletter (ligesom alle Sets)
+        //   - Automatisk SORTERER elementerne (mindste foerst)
+        //   - Bruger et traee internt (roed-sort-traee)
+        // Vi bruger TreeSet her til at finde alle unikke aar-tal fra bilerne.
+        // Hvis vi har biler fra 2022, 2024, 2022, 2023 faar vi: [2022, 2023, 2024]
+        // - Ingen dubletter (2022 vises kun een gang)
+        // - Automatisk sorteret (mindste aar foerst)
+        // Dette bruges i viewet til at vise hvilke aargange der findes i systemet.
+        TreeSet<Integer> unikkeAar = new TreeSet<>();
+        for (Bil b : biler) {
+            unikkeAar.add(b.getAar());
+            // add() ignorerer automatisk vaerdier der allerede er i settet (ingen dubletter)
+        }
+        model.addAttribute("unikkeAar", unikkeAar);
+
         return "biler";
     }
 

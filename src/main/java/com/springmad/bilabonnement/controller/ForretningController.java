@@ -6,6 +6,8 @@ import com.springmad.bilabonnement.repository.ForretningJdbcRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+
+import java.util.HashMap;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,6 +50,13 @@ public class ForretningController {
 
         model.addAttribute("aktive", forretningJdbcRepository.aktiveUdlejningerMedJoin());
         // Liste med aktive abonnementer (JOIN mellem kunde, bil og abonnement).
+
+        // ===== HashMap =====
+        // HashMap gemmer data som noegel-vaerdi par (key-value).
+        // Her henter vi antal abonnementer per status, fx {"AKTIV" -> 5, "AFSLUTTET" -> 12}.
+        // Vi sender den til viewet saa dashboardet kan vise en fordeling.
+        HashMap<String, Integer> statusFordeling = forretningJdbcRepository.antalAbonnementerPerStatus();
+        model.addAttribute("statusFordeling", statusFordeling);
 
         return "dashboard";
         // templates/dashboard.html

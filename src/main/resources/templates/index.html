@@ -20,7 +20,8 @@
 
 <main class="container">
 
-    <section class="header">
+    <!-- Semantic HTML: <header> markerer sidens top-sektion (block-element). -->
+    <header class="header">
         <div class="header-hero">
             <h1>Internt system til BilAbonnement</h1>
             <p>
@@ -29,32 +30,42 @@
             </p>
 
             <div class="actions">
+                <!-- <a> er et inline-element (fylder kun sin teksts bredde).
+                     Men med CSS klassen .btn faar den display og padding som en knap. -->
                 <a class="btn btn-primary" href="/data/lejeaftale/opret">Opret lejeaftale</a>
                 <a class="btn btn-ghost" href="/skader/opret">Registrer skade</a>
                 <a class="btn btn-ghost" href="/dashboard">Dashboard</a>
             </div>
         </div>
-    </section>
+    </header>
 
-    <section class="grid">
-        <div class="card">
+    <!-- <section> grupperer relateret indhold (block-element). -->
+    <section class="grid-3">
+        <!-- <article> er et selvstaendigt indholdsstykke (block-element).
+             Hvert kort er en article fordi det kan staa alene og giver mening uden kontekst. -->
+        <article class="card">
             <h3>Dataregistrering</h3>
             <p>Opret nye lejeaftaler med kunde, bil og datoer.</p>
             <a href="/data/lejeaftale/opret">Gaa til opret lejeaftale -></a>
-        </div>
+        </article>
 
-        <div class="card">
+        <article class="card">
             <h3>Skade og udbedring</h3>
             <p>Registrer fejl/mangler paa afsluttede aftaler og pris pr. skade.</p>
             <a href="/skader/opret">Gaa til skader -></a>
-        </div>
+        </article>
 
-        <div class="card">
+        <article class="card">
             <h3>Forretning</h3>
             <p>Se antal udlejede biler og samlet maanedlig pris.</p>
             <a href="/dashboard">Gaa til dashboard -></a>
-        </div>
+        </article>
     </section>
+
+    <!-- <footer> markerer bunden af en sektion (block-element). -->
+    <footer>
+        <p class="hint">Systemet er bygget med Spring Boot, Thymeleaf og JdbcTemplate.</p>
+    </footer>
 
 </main>
 

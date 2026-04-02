@@ -6,8 +6,40 @@
 
 ### Hvad er Singleton?
 
-Et designmoenstre der sikrer at der kun er **een instans** af en klasse i hele programmet.
-Man kan tilgaa den samme instans fra forskellige steder.
+Singleton er et designmoenstre (Gang-of-Four) der sikrer at der kun er **een instans** af en klasse i hele programmet. Man kan tilgaa den samme instans fra forskellige steder.
+
+- **Intent:** Ensure a class has only one instance, and provide a global point of access to it.
+- **Motivation:** Vigtige klasser (fx database-konfiguration, roller) skal kun have een instans.
+  Globale variabler giver adgang, men forhindrer ikke at man opretter flere objekter.
+  Singleton giver klassen selv ansvaret for at holde styr paa sin ene instans.
+
+### Singleton-strukturen (UML)
+
+```
+┌──────────────────────────────────┐
+│       RolleDefinitioner          │
+├──────────────────────────────────┤
+│ - static instance                │  <- statisk felt der holder den ene instans
+│ - rolleDataregistrering: String  │
+│ - rolleSkadeOgUdbedring: String  │
+│ - rolleForretning: String        │
+│ - statusAktiv: String            │
+│ - statusAfsluttet: String        │
+│ - kontraktLimited: String        │
+│ - kontraktUnlimited: String      │
+├──────────────────────────────────┤
+│ - RolleDefinitioner()            │  <- privat konstruktoer (ingen kan kalde new)
+│ + static getInstance()           │  <- eneste adgangspunkt (returnerer instance)
+│ + getRolleDataregistrering()     │
+│ + getRolleSkadeOgUdbedring()     │
+│ + getRolleForretning()           │
+│ + getStatusAktiv()               │
+│ + getStatusAfsluttet()           │
+│ + getKontraktLimited()           │
+│ + getKontraktUnlimited()         │
+└──────────────────────────────────┘
+  - = private, + = public, static = tilhoerer klassen (ikke objektet)
+```
 
 ### Hvordan sikrer vi at der kun er een instans?
 
@@ -16,8 +48,10 @@ Tre ting arbejder sammen:
 ```
 1. Privat konstruktoer    -> ingen kan skrive "new RolleDefinitioner()" udefra
 2. Statisk felt (instance) -> holder den ene instans i hukommelsen
-3. getInstance()           -> den eneste maade at faa instansen paa
+3. getInstance()           -> den eneste maade at faa instansen paa (lazy initialization)
 ```
+
+**Lazy initialization** betyder at instansen foerst oprettes naar `getInstance()` kaldes foerste gang — ikke naar programmet starter.
 
 ### Hvor bruger vi Singleton i projektet?
 
@@ -97,18 +131,71 @@ Singleton giver os: privat konstruktoer + kontrolleret adgang + een instans.
 Et testframework i Java. JUnit tests er det mindste og mest automatiserede niveau af test.
 Den tester en **unit** (metode) ad gangen.
 
-### Hvad bruger vi til at teste?
+### Navngivning af testmetoder
 
-**Assert-metoder** sammenligner forventet og faktisk resultat:
+Testmetoder faar **lange, beskrivende navne** saa man kan se hvad der testes uden at laese koden.
+Vi foelger moensteret: `metode_situation_forventetResultat`
 
-| Metode | Hvad den goer | Eksempel |
+**Faktisk navne fra vores tests:**
+```
+setNavn_ogGetNavn_returnererKorrektVaerdi      <- hvad testes, hvad forventes
+gyldigSkadeliste_enGyldigSkade_returnererTrue   <- metode, input, resultat
+gyldigSkadeliste_duplikeretBeskrivelse_returnererFalse
+opretAbonnementHvisMuligt_happyFlow
+opretAbonnementHvisMuligt_exceptionFlow_kundenHarAlleredeAktivtAbonnement
+```
+
+### Arrange / Act / Assert moensteret
+
+Alle vores tests foelger dette moenter:
+
+**Faktisk kode fra [`BilTest.java`](src/test/java/com/springmad/bilabonnement/model/BilTest.java):**
+```java
+// Fra BilTest.setNavn_ogGetNavn_returnererKorrektVaerdi():
+// Arrange: opret objektet
+Bil bil = new Bil();
+
+// Act: udfør handlingen
+bil.setNavn("Toyota Yaris");
+
+// Assert: tjek resultatet
+assertEquals("Toyota Yaris", bil.getNavn(),
+        "getNavn() skal returnere det navn vi satte med setNavn()");
+```
+
+### Assert-metoder
+
+**Assert-metoder** sammenligner forventet og faktisk resultat.
+Man kan give en **besked** som sidste parameter — beskeden vises KUN hvis testen fejler.
+
+| Metode | Hvad den goer | Faktisk eksempel fra vores kode |
 |--------|--------------|---------|
-| `assertEquals(a, b)` | Fejler hvis a og b har **forskellig vaerdi** | `assertEquals("AKTIV", roller.getStatusAktiv())` |
-| `assertNotNull(x)` | Fejler hvis x er **null** | `assertNotNull(instans)` |
-| `assertSame(a, b)` | Fejler hvis a og b er **forskellige objekter** | `assertSame(instans1, instans2)` |
-| `assertThrows(E, code)` | Fejler hvis koden IKKE kaster exception E | `assertThrows(IllegalStateException.class, () -> ...)` |
+| `assertEquals(forventet, faktisk)` | Fejler hvis vaerdierne er forskellige | `assertEquals("Toyota Yaris", bil.getNavn())` |
+| `assertEquals(forventet, faktisk, besked)` | Samme + viser besked ved fejl | `assertEquals(2023, bil.getAar(), "getAar() skal returnere 2023")` |
+| `assertTrue(vaerdi)` | Fejler hvis vaerdien er `false` | `assertTrue(resultat)` — skadeliste er gyldig |
+| `assertFalse(vaerdi)` | Fejler hvis vaerdien er `true` | `assertFalse(resultat)` — skadeliste er ugyldig |
+| `assertNull(vaerdi)` | Fejler hvis vaerdien IKKE er `null` | `assertNull(bil.getNavn(), "ny bil skal have navn = null")` |
+| `assertNotNull(vaerdi)` | Fejler hvis vaerdien er `null` | `assertNotNull(instans)` — Singleton eksisterer |
+| `assertSame(a, b)` | Fejler hvis a og b er **forskellige objekter** | `assertSame(instans1, instans2)` — samme Singleton |
+| `assertThrows(Exception, kode)` | Fejler hvis koden IKKE kaster exception | `assertThrows(IllegalStateException.class, () -> ...)` |
 
-**Vigtigt:** `assertEquals` tjekker **vaerdi**, `assertSame` tjekker **objekt-reference** (samme sted i hukommelsen).
+**UDEN besked (svaerere at debugge):**
+```java
+// Hvis denne fejler, ser man bare: "expected 2023 but was 0" — ikke HVORFOR
+assertEquals(2023, bil.getAar());
+```
+
+**MED besked (nemmere at debugge):**
+
+**Faktisk kode fra [`BilTest.java`](src/test/java/com/springmad/bilabonnement/model/BilTest.java):**
+```java
+// Fra BilTest.setAar_ogGetAar_returnererKorrektVaerdi():
+// Hvis denne fejler, ser man: "getAar() skal returnere 2023 efter setAar(2023) — expected 2023 but was 0"
+assertEquals(2023, bil.getAar(),
+        "getAar() skal returnere 2023 efter setAar(2023)");
+```
+
+**Vigtigt:** `assertEquals` — foerste parameter er FORVENTET, anden er FAKTISK. `assertSame` tjekker **objekt-reference** (== i hukommelsen), ikke vaerdi.
 
 ### Testklasse 1: [`RolleDefinitionerTest`](src/test/java/com/springmad/bilabonnement/model/RolleDefinitionerTest.java)
 

@@ -36,13 +36,28 @@ public class BilController {
         List<Bil> biler = bilService.findAll();
         model.addAttribute("biler", biler);
 
-        // ===== TreeSet =====
+        // ===== Set-metoder fra Collection Framework =====
         // TreeSet: ingen dubletter + automatisk sortering.
         // Finder unikke aargange fra bilerne til visning i viewet.
         TreeSet<Integer> unikkeAar = new TreeSet<>();
+
+        // add(): tilfojer en vaerdi til settet (ignorerer dubletter).
         for (Bil b : biler) {
             unikkeAar.add(b.getAar());
         }
+
+        // contains(): returnerer true hvis vaerdien findes i settet.
+        boolean har2024 = unikkeAar.contains(2024);
+        model.addAttribute("har2024", har2024);
+
+        // size(): returnerer antal elementer i settet.
+        int antalUnikkeAar = unikkeAar.size();
+        model.addAttribute("antalUnikkeAar", antalUnikkeAar);
+
+        // isEmpty(): returnerer true hvis settet er tomt.
+        boolean harAar = !unikkeAar.isEmpty();
+        model.addAttribute("harAar", harAar);
+
         model.addAttribute("unikkeAar", unikkeAar);
 
         return "biler";

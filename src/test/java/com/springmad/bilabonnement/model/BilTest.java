@@ -8,11 +8,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 // ===== JUnit Test for Bil =====
 // Tester at Bil-modellens getters og setters virker korrekt.
-// Dette er vigtigt fordi Bil bruges til at flytte data mellem:
-//   - Databasen (via RowMapper i BilRepository)
-//   - Controlleren (via @ModelAttribute)
-//   - Viewet (via Thymeleaf th:field)
-// Hvis en getter/setter er forkert, vises forkert data i hele systemet.
+//
+// Navngivning af testmetoder: beskrivende navne saa man kan se hvad der testes.
+// Foelger moensteret: metode_situation_forventetResultat
+//
+// assertEquals(forventet, faktisk): foerste parameter er FORVENTET vaerdi,
+// anden parameter er FAKTISK vaerdi. Man kan ogsaa give en besked som foerste
+// parameter: assertEquals("besked", forventet, faktisk) — beskeden vises hvis testen fejler.
 class BilTest {
 
     @Test
@@ -24,8 +26,10 @@ class BilTest {
         // Act: saet navn
         bil.setNavn("Toyota Yaris");
 
-        // Assert: get skal returnere det vi satte
-        assertEquals("Toyota Yaris", bil.getNavn());
+        // Assert: assertEquals(besked, forventet, faktisk)
+        // Beskeden vises KUN hvis testen fejler — goer det nemt at se hvad der gik galt.
+        assertEquals("Toyota Yaris", bil.getNavn(),
+                "getNavn() skal returnere det navn vi satte med setNavn()");
     }
 
     @Test
@@ -35,7 +39,8 @@ class BilTest {
 
         bil.setAar(2023);
 
-        assertEquals(2023, bil.getAar());
+        assertEquals(2023, bil.getAar(),
+                "getAar() skal returnere 2023 efter setAar(2023)");
     }
 
     @Test
@@ -48,8 +53,10 @@ class BilTest {
         bil.setStartsdato(start);
         bil.setSlutsdato(slut);
 
-        assertEquals(start, bil.getStartsdato());
-        assertEquals(slut, bil.getSlutsdato());
+        assertEquals(start, bil.getStartsdato(),
+                "startsdato skal vaere 2024-01-01");
+        assertEquals(slut, bil.getSlutsdato(),
+                "slutsdato skal vaere 2024-12-31");
     }
 
     @Test
@@ -57,10 +64,15 @@ class BilTest {
     void nyBil_harStandardvaerdier() {
         Bil bil = new Bil();
 
-        assertEquals(0, bil.getId());
-        assertNull(bil.getNavn());
-        assertEquals(0, bil.getAar());
-        assertNull(bil.getStartsdato());
-        assertNull(bil.getSlutsdato());
+        assertEquals(0, bil.getId(),
+                "ny bil skal have id = 0 (int default)");
+        assertNull(bil.getNavn(),
+                "ny bil skal have navn = null (String default)");
+        assertEquals(0, bil.getAar(),
+                "ny bil skal have aar = 0 (int default)");
+        assertNull(bil.getStartsdato(),
+                "ny bil skal have startsdato = null (LocalDate default)");
+        assertNull(bil.getSlutsdato(),
+                "ny bil skal have slutsdato = null (LocalDate default)");
     }
 }

@@ -61,6 +61,133 @@ Server (Spring):   Modtager requests fra browseren
 
 ---
 
+## MVC — Model-View-Controller
+
+MVC er et designmoenstre der adskiller en applikation i tre dele:
+
+| Del | Ansvar | I vores projekt |
+|---|---|---|
+| **Model** | Data (Java-klasser med felter og getters/setters) | [`Bil`](src/main/java/com/springmad/bilabonnement/model/Bil.java), [`Kunde`](src/main/java/com/springmad/bilabonnement/model/Kunde.java), [`Bruger`](src/main/java/com/springmad/bilabonnement/model/Bruger.java) |
+| **View** | Visning (HTML der vises i browseren) | Thymeleaf templates i `templates/` |
+| **Controller** | Styring (modtager request, henter data, sender til view) | [`BilController`](src/main/java/com/springmad/bilabonnement/controller/BilController.java), [`KundeController`](src/main/java/com/springmad/bilabonnement/controller/KundeController.java) osv. |
+
+### Fordele ved MVC
+
+- **Decoupling** — views og models er adskilte (man kan aendre HTML uden at aendre Java)
+- **Reducerer kompleksitet** — hvert lag har eet ansvar
+- **Fleksibelt** — man kan skifte view-teknologi uden at aendre controller/model
+- **Testbart** — man kan teste forretningslogik uden HTML
+
+### Saadan virker et request i vores projekt (MVC flow)
+
+```mermaid
+sequenceDiagram
+    participant B as Browser (Client)
+    participant C as Controller
+    participant S as Service
+    participant R as Repository
+    participant DB as Database
+    participant V as View (Thymeleaf)
+
+    B->>C: HTTP GET /kunder
+    C->>S: kundeService.findAll()
+    S->>R: kundeJdbcRepository.findAll()
+    R->>DB: SELECT id, navn, email, telefon FROM kunder
+    DB-->>R: ResultSet (raekker)
+    R-->>S: List af Kunde-objekter (Model)
+    S-->>C: List af Kunde-objekter (Model)
+    C->>C: model.addAttribute("kunder", ...)
+    C->>V: return "kunder" -> templates/kunder.html
+    V-->>B: Faerdig HTML med data indsat via th:each
+```
+
+### Faktisk kode der viser MVC i aktion
+
+**1. Controller modtager request og henter Model via Service:**
+
+**Faktisk kode fra [`KundeController.java`](src/main/java/com/springmad/bilabonnement/controller/KundeController.java):**
+```java
+// Fra KundeController.kunderSide():
+@GetMapping
+public String kunderSide(Model model) {
+    model.addAttribute("kunde", new Kunde());           // tom Model til formularen
+    model.addAttribute("kunder", kundeService.findAll()); // Model: liste af Kunde-objekter
+    return "kunder";                                      // View: templates/kunder.html
+}
+```
+
+**2. Model er en Java-klasse med data:**
+
+**Faktisk kode fra [`Kunde.java`](src/main/java/com/springmad/bilabonnement/model/Kunde.java):**
+```java
+// Fra Kunde.java:
+public class Kunde {
+    private Integer id;
+    private String navn;
+    private String email;
+    private String telefon;
+    // + tom konstruktoer, getters og setters
+}
+```
+
+**3. View viser Model-data via Thymeleaf:**
+
+**Faktisk kode fra [`kunder.html`](src/main/resources/templates/kunder.html):**
+```html
+<!-- Fra kunder.html: -->
+<tr th:each="k : ${kunder}">           <!-- looper gennem List<Kunde> fra controller -->
+    <td th:text="${k.id}"></td>          <!-- viser Kunde.getId() -->
+    <td th:text="${k.navn}"></td>        <!-- viser Kunde.getNavn() -->
+    <td th:text="${k.email}"></td>       <!-- viser Kunde.getEmail() -->
+    <td th:text="${k.telefon}"></td>     <!-- viser Kunde.getTelefon() -->
+</tr>
+```
+
+### UDEN MVC (problemet)
+
+```java
+// FOER — alt blandet sammen i een klasse:
+// SQL, HTML-generering og request-haandtering i samme metode.
+// Problem: uoverskueligt, kan ikke testes, kan ikke genbruges.
+```
+
+### MED MVC (loesningen)
+
+```
+Controller (KundeController.java)  ->  modtager GET /kunder
+  |
+  v
+Service (KundeService.java)        ->  kalder repository
+  |
+  v
+Repository (KundeJdbcRepository)   ->  koerer SQL, returnerer List<Kunde> (Model)
+  |
+  v
+Controller                         ->  model.addAttribute("kunder", liste)
+  |
+  v
+View (kunder.html)                 ->  th:each="k : ${kunder}" viser data i HTML
+
+Loesning: hvert lag har eet ansvar. Aendringer i HTML paaviker ikke Java.
+           Aendringer i SQL paaviker ikke controlleren.
+```
+
+### `model.addAttribute()` — bindeledet mellem Controller og View
+
+Controlleren bruger `model.addAttribute(navn, data)` til at sende data til viewet.
+Viewet bruger `${navn}` til at hente data fra modellen.
+
+**Faktisk kode fra [`BilController.java`](src/main/java/com/springmad/bilabonnement/controller/BilController.java):**
+```java
+// Fra BilController.bilerPage():
+model.addAttribute("bil", new Bil());             // viewet bruger ${bil} i th:object
+model.addAttribute("biler", bilService.findAll()); // viewet bruger ${biler} i th:each
+model.addAttribute("unikkeAar", unikkeAar);        // viewet bruger ${unikkeAar}
+return "biler";                                     // -> templates/biler.html
+```
+
+---
+
 ## Packages i Spring
 
 Packages er en maade at organisere koden i projektet paa.
@@ -493,6 +620,241 @@ public String sletKunde(@PathVariable int id) {
 | Vis opret-formular | GET | `@GetMapping` | `GET /abonnementer/opret` |
 | Gem abonnement | POST | `@PostMapping` | `POST /abonnementer/opret` |
 | Slet kunde | GET | `@GetMapping` | `GET /kunder/slet/{id}` |
+
+---
+
+## Java og MySQL (JDBC)
+
+Java kommunikerer med MySQL-databasen via JDBC (Java Database Connectivity).
+Strukturen er altid den samme: forbind -> kør SQL -> hent resultater -> vis data.
+
+### UDEN JdbcTemplate — raa JDBC (fra pensum)
+
+Pensum viser den manuelle maade med `DriverManager`, `Connection`, `Statement` og `ResultSet`:
+
+```java
+// FOER — raa JDBC (manuelt, mange linjer):
+import java.sql.*;
+
+// 1. Forbindelse til databasen
+Connection con = DriverManager.getConnection(
+    "jdbc:mysql://localhost:3306/bil_db", "root", "password");
+
+// 2. Opret et Statement-objekt
+Statement s = con.createStatement();
+
+// 3. Kør SQL og faa et ResultSet tilbage
+ResultSet rs = s.executeQuery("SELECT id, navn, email FROM kunder");
+
+// 4. Gennemløb ResultSet raekke for raekke
+while (rs.next()) {
+    int id = rs.getInt("id");           // kolonne 1
+    String navn = rs.getString("navn"); // kolonne 2
+    String email = rs.getString("email"); // kolonne 3
+}
+
+// 5. Luk forbindelsen (VIGTIGT — ellers laekkker vi forbindelser)
+rs.close();
+s.close();
+con.close();
+
+// Problemer:
+//   - Mange linjer boilerplate-kode
+//   - Man skal selv lukke Connection, Statement, ResultSet
+//   - Ingen beskyttelse mod SQL-injection (med Statement)
+//   - Man skal selv haandtere exceptions med try/catch
+```
+
+### MED JdbcTemplate — Spring's loesning (det vi bruger)
+
+Spring's JdbcTemplate goer det samme som raa JDBC, men fjerner al boilerplate.
+Spring haandterer Connection, Statement, close() og exceptions automatisk.
+
+**Faktisk kode fra [`KundeJdbcRepository.java`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java):**
+```java
+// Fra KundeJdbcRepository.findAll():
+public List<Kunde> findAll() {
+    String sql = "SELECT id, navn, email, telefon FROM kunder";
+    return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Kunde.class));
+}
+// Spring haandterer Connection, Statement, ResultSet og close() automatisk.
+// BeanPropertyRowMapper mapper ResultSet til Kunde-objekter automatisk.
+// Parameteriseret query (?) beskytter mod SQL-injection.
+```
+
+**Faktisk kode fra [`KundeJdbcRepository.java`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java) — INSERT:**
+```java
+// Fra KundeJdbcRepository.opretKunde():
+public void opretKunde(Kunde kunde) {
+    String sql = "INSERT INTO kunder (navn, email, telefon) VALUES (?, ?, ?)";
+    jdbcTemplate.update(sql, kunde.getNavn(), kunde.getEmail(), kunde.getTelefon());
+}
+// jdbc.update() bruges til INSERT, UPDATE og DELETE (ligesom executeUpdate i raa JDBC).
+// ? parametre beskytter mod SQL-injection (prepared statement).
+```
+
+**Faktisk kode fra [`KundeJdbcRepository.java`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java) — DELETE:**
+```java
+// Fra KundeJdbcRepository.sletKunde():
+public void sletKunde(int id) {
+    String sql = "DELETE FROM kunder WHERE id = ?";
+    jdbcTemplate.update(sql, id);
+}
+```
+
+### Sammenligning: raa JDBC vs JdbcTemplate
+
+| | Raa JDBC (fra pensum) | JdbcTemplate (det vi bruger) |
+|---|---|---|
+| **Forbindelse** | `DriverManager.getConnection(url, user, pass)` | Spring goer det automatisk via `application.properties` |
+| **SELECT** | `s.executeQuery(sql)` returnerer `ResultSet` | `jdbc.query(sql, rowMapper)` returnerer `List<Objekt>` |
+| **INSERT/UPDATE/DELETE** | `s.executeUpdate(sql)` | `jdbc.update(sql, params)` |
+| **ResultSet** | Manuelt: `rs.getInt()`, `rs.getString()` | Automatisk via RowMapper eller BeanPropertyRowMapper |
+| **Lukke forbindelse** | Manuelt: `con.close()`, `rs.close()`, `s.close()` | Automatisk — Spring goer det |
+| **SQL-injection** | Saarbar med `Statement` | Beskyttet med `?` parametre |
+| **Exceptions** | Manuelt: `try/catch SQLException` | Spring wrapper dem automatisk |
+
+### URL'en forklaret
+
+Vores database-URL fra [`.env`](.env):
+```
+jdbc:mysql://gateway01.eu-central-1.prod.aws.tidbcloud.com:4000/bil_db?sslMode=VERIFY_IDENTITY
+│     │      │                                                   │    │
+│     │      │                                                   │    └── databasenavn
+│     │      │                                                   └── port
+│     │      └── netvaerksadresse (host)
+│     └── type af database (MySQL)
+└── JDBC protokol
+```
+
+### Hvor i projektet bruger vi JDBC?
+
+| Repository | SELECT (query) | INSERT/UPDATE/DELETE (update) |
+|---|---|---|
+| [`KundeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java) | `jdbc.query()` med BeanPropertyRowMapper | `jdbc.update()` med INSERT og DELETE |
+| [`BrugerJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/BrugerJdbcRepository.java) | `jdbc.query()` med BeanPropertyRowMapper | `jdbc.update()` med INSERT |
+| [`BilRepository`](src/main/java/com/springmad/bilabonnement/repository/BilRepository.java) | `jdbc.query()` med manuel RowMapper | `jdbc.update()` med INSERT |
+| [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) | `jdbc.query()` med manuel RowMapper, `jdbc.queryForObject()` | `jdbc.update()` med INSERT |
+| [`ForretningJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/ForretningJdbcRepository.java) | `jdbc.queryForObject()` med COUNT/SUM, `jdbc.queryForList()` | Ingen |
+| [`SkadeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/SkadeJdbcRepository.java) | `jdbc.queryForList()` | `jdbc.update()` med INSERT |
+
+---
+
+## Exception Handling (try, catch, throw, throws, finally)
+
+Naar et program stoeder paa en fejl under koersel, terminerer det normalt.
+Exception handling goer at vi kan **fange fejlen** og haandtere den, saa programmet kan fortsaette eller stoppe kontrolleret.
+
+### De fem noegleord
+
+| Noegleord | Hvad det goer | Hvor vi bruger det |
+|---|---|---|
+| `try` | Indeholder kode der KAN fejle | [`AbonnementController`](src/main/java/com/springmad/bilabonnement/controller/AbonnementController.java) |
+| `catch` | Fanger en specifik exception og haandterer den | [`AbonnementController`](src/main/java/com/springmad/bilabonnement/controller/AbonnementController.java) (3 catch-blokke) |
+| `throw` | Kaster en exception manuelt | [`AbonnementService`](src/main/java/com/springmad/bilabonnement/service/AbonnementService.java) |
+| `throws` | Erklaerer at en metode KAN kaste en exception | [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) (RowMapper: `throws SQLException`) |
+| `finally` | Koerer ALTID, uanset om der var en exception eller ej | [`AbonnementController`](src/main/java/com/springmad/bilabonnement/controller/AbonnementController.java) |
+
+### UDEN exception handling (problemet)
+
+```java
+// FOER — ingen try/catch:
+abonnementService.opretAbonnementHvisMuligt(kundeNavn, bilId, startdato, slutdato, pris);
+// Hvis kunden ikke findes i databasen, crasher hele applikationen.
+// Brugeren ser en grim fejlside i stedet for en hjaelpsom besked.
+// Programmet stopper — alle andre brugere paavirkes.
+```
+
+### MED exception handling (loesningen)
+
+**Faktisk kode fra [`AbonnementController.java`](src/main/java/com/springmad/bilabonnement/controller/AbonnementController.java) — try, catch (3 blokke), finally:**
+```java
+// Fra AbonnementController.opretAbonnement():
+try {
+    abonnementService.opretAbonnementHvisMuligt(
+            kundeNavn, bilId.intValue(), startdato, slutdato, maanedligPris
+    );
+
+} catch (EmptyResultDataAccessException e) {
+    // Catch 1: kunden findes ikke i databasen
+    model.addAttribute("fejl", "Kunden findes ikke. Opret kunden foerst under /kunder.");
+    model.addAttribute("biler", bilService.findAll());
+    return "abonnement-opret";
+
+} catch (IllegalArgumentException e) {
+    // Catch 2: ugyldigt input (tomt kundenavn, negativ pris)
+    model.addAttribute("fejl", e.getMessage());
+    model.addAttribute("biler", bilService.findAll());
+    return "abonnement-opret";
+
+} catch (IllegalStateException e) {
+    // Catch 3: kunden har allerede et aktivt abonnement
+    model.addAttribute("fejl", e.getMessage());
+    model.addAttribute("biler", bilService.findAll());
+    return "abonnement-opret";
+
+} finally {
+    // Koerer ALTID — bruges til oprydning/logning
+    System.out.println("Abonnement-oprettelse forsoegte for kunde: " + kundeNavn);
+}
+```
+
+**Faktisk kode fra [`AbonnementService.java`](src/main/java/com/springmad/bilabonnement/service/AbonnementService.java) — throw:**
+```java
+// Fra AbonnementService.opretAbonnementHvisMuligt():
+if (kundeNavn == null || kundeNavn.isBlank()) {
+    throw new IllegalArgumentException("Kundenavn maa ikke vaere tomt.");
+}
+
+if (maanedligPris == null || maanedligPris.compareTo(BigDecimal.ZERO) <= 0) {
+    throw new IllegalArgumentException("Maanedlig pris skal vaere positiv.");
+}
+
+if (abonnementJdbcRepository.harAktivtAbonnementForKundeNavn(kundeNavn)) {
+    throw new IllegalStateException("Kunden har allerede et aktivt abonnement.");
+}
+```
+
+**Faktisk kode fra [`AbonnementJdbcRepository.java`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) — throws:**
+```java
+// Fra AbonnementJdbcRepository — throws erklaerer at metoden KAN kaste SQLException:
+private AbonnementOversigt mapRowTilAbonnementOversigt(ResultSet rs) throws SQLException {
+    AbonnementOversigt dto = new AbonnementOversigt();
+    dto.setAbonnementId(rs.getInt("abonnement_id"));
+    // ... throws betyder: "denne metode kan fejle med SQLException,
+    //     og den der kalder den skal haandtere det."
+}
+```
+
+### Forskellen paa `throw` og `throws`
+
+```
+throw  = KASTER en exception (sker i koden, fx i AbonnementService)
+throws = ERKLAERER at en metode KAN kaste en exception (staar i metode-signaturen)
+```
+
+### Exception-typer vi bruger
+
+| Exception | Type | Hvad den betyder | Hvor vi kaster den |
+|---|---|---|---|
+| `IllegalArgumentException` | RuntimeException (unchecked) | Ugyldigt input fra brugeren | [`AbonnementService`](src/main/java/com/springmad/bilabonnement/service/AbonnementService.java) |
+| `IllegalStateException` | RuntimeException (unchecked) | Ugyldig tilstand (fx dublet-abonnement) | [`AbonnementService`](src/main/java/com/springmad/bilabonnement/service/AbonnementService.java) |
+| `EmptyResultDataAccessException` | RuntimeException (unchecked) | Ingen data fundet i databasen | [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java) |
+| `SQLException` | Exception (checked) | Database-fejl | RowMapper-metoder (via `throws`) |
+
+### Flowet: throw -> catch
+
+```
+1. Bruger udfylder formular og klikker "Gem"
+2. AbonnementController kalder AbonnementService
+3. AbonnementService tjekker: er kundeNavn tomt?
+4. JA -> throw new IllegalArgumentException("Kundenavn maa ikke vaere tomt.")
+5. Exception "bobler op" til AbonnementController
+6. catch (IllegalArgumentException e) fanger den
+7. Controller viser fejlbesked til brugeren: e.getMessage()
+8. finally koerer: logger forsoget
+9. Programmet crasher IKKE — brugeren ser en hjaelpsom besked
+```
 
 ---
 

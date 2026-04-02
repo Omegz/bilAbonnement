@@ -170,11 +170,106 @@ Iterator **skjuler** den kompleksitet — vi kalder bare `hasNext()` og `next()`
 
 ---
 
+## Hashing — teorien bag HashSet og HashMap
+
+HashSet og HashMap er hurtige fordi de bruger **hashing** internt.
+Denne sektion forklarer HVORDAN det virker under motorhjelmen.
+
+### Hvad er hashing?
+
+**Hash:** At konvertere en vaerdi til et heltal (index i et array).
+**Hash table:** Et array der gemmer elementer via hashing.
+**Hash function:** En algoritme der mapper vaerdier til indekser.
+
+```
+Eksempel: hash function for heltal = vaerdi % array-laengde
+
+add("Ridse")   -> "Ridse".hashCode() % 10 = 3
+add("Bule")    -> "Bule".hashCode() % 10 = 7
+add("Revne")   -> "Revne".hashCode() % 10 = 1
+
+index:  [0]    [1]      [2]    [3]      [4]    [5]    [6]    [7]     [8]    [9]
+value:  null   "Revne"  null   "Ridse"  null   null   null   "Bule"  null   null
+
+Opslag: contains("Bule") -> hashCode() % 10 = 7 -> kig paa index 7 -> fundet!
+Derfor er HashSet hurtig: vi behoever IKKE at gennemlobe hele arrayet.
+```
+
+### hashCode() i Java
+
+Alle Java-objekter har en `hashCode()` metode der returnerer et heltal.
+Naar vi kalder `setBeskrivelser.add("Ridse")` i vores kode, sker dette internt:
+
+```
+1. Java kalder "Ridse".hashCode()         -> faar et heltal (fx 78773847)
+2. HashSet beregner index: 78773847 % arrayLength  -> faar fx index 3
+3. HashSet gemmer "Ridse" paa index 3 i sit interne array
+```
+
+**I vores projekt:** naar [`SkadeService`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java) kalder `setBeskrivelser.add(beskrivelser.get(i))`, bruger Java `hashCode()` paa String-objektet til at finde index.
+
+### Kollisioner (collisions)
+
+**Kollision:** Naar to vaerdier faar samme index.
+
+```
+add("Ridse")   -> hashCode() % 10 = 3
+add("Flænge")  -> hashCode() % 10 = 3   <- KOLLISION! Samme index som "Ridse"
+```
+
+### Kollisionsloesning: Linear Probing
+
+**Probing:** Flyt til naeste ledige index.
+
+```
+FOER kollision:
+index:  [0]    [1]    [2]    [3]      [4]    [5]
+value:  null   null   null   "Ridse"  null   null
+
+EFTER linear probing (flyt til index 4):
+index:  [0]    [1]    [2]    [3]      [4]       [5]
+value:  null   null   null   "Ridse"  "Flænge"  null
+
+Problem: CLUSTERING — klumper af elementer ved siden af hinanden.
+Soegning bliver langsom fordi man skal tjekke mange naboer.
+```
+
+### Kollisionsloesning: Chaining (det Java bruger)
+
+**Chaining:** Gem en **liste** paa hvert index i stedet for en enkelt vaerdi.
+
+```
+Med chaining (Javas HashSet og HashMap bruger dette):
+index:  [0]    [1]    [2]    [3]                    [4]    [5]
+value:  null   null   null   ["Ridse", "Flænge"]    null   null
+                              ^--- liste med begge vaerdier
+
+Fordel: man loeber aldrig toer for indekser.
+Listerne er korte, saa det er stadig hurtigt.
+```
+
+### Hvornaar bruger vi hashing i projektet?
+
+| Klasse | Bruger hashing | Hvad sker internt |
+|---|---|---|
+| `HashSet` i [`SkadeService`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java) | `add()` kalder `hashCode()` paa String | Finder index, tjekker om vaerdien allerede er der (dublet) |
+| `HashMap` i [`ForretningJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/ForretningJdbcRepository.java) | `put()` kalder `hashCode()` paa String-noeglen | Finder index for noeglen, gemmer noegel-vaerdi par |
+
+### Forskel paa hashing af heltal vs objekter
+
+```
+Heltal:   hashCode() for 49 = 49.  Index = 49 % 10 = 9.  (simpelt)
+String:   hashCode() for "Ridse" = summen af bogstavernes ASCII-vaerdier (+ mere).
+Objekter: man kan skrive sin egen hashCode() metode i sine klasser.
+```
+
+---
+
 ## Set-implementeringer
 
 ### HashSet
 
-**Hvad:** En Set der bruger hashing internt. Ingen dubletter, ingen garanteret raekkefoelge, meget hurtig opslag.
+**Hvad:** En Set der bruger hashing internt (se sektionen ovenfor). Ingen dubletter, ingen garanteret raekkefoelge, meget hurtig opslag.
 
 **Hvor i projektet:** [`SkadeService.gyldigSkadeliste()`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java)
 
@@ -223,15 +318,25 @@ return true;
 
 **Hvorfor:** Finder unikke aargange fra bilerne, sorteret automatisk.
 
-**Faktisk kode fra projektet:**
+**Faktisk kode fra [`BilController.java`](src/main/java/com/springmad/bilabonnement/controller/BilController.java):**
 ```java
 // Fra BilController.bilerPage():
 TreeSet<Integer> unikkeAar = new TreeSet<>();
+
+// add(): tilfojer en vaerdi (ignorerer dubletter)
 for (Bil b : biler) {
     unikkeAar.add(b.getAar());
 }
-model.addAttribute("unikkeAar", unikkeAar);
 // Resultat: fx [2022, 2023, 2024] — sorteret, ingen dubletter
+
+// contains(): tjekker om en vaerdi findes i settet
+boolean har2024 = unikkeAar.contains(2024);
+
+// size(): antal elementer
+int antalUnikkeAar = unikkeAar.size();
+
+// isEmpty(): er settet tomt?
+boolean harAar = !unikkeAar.isEmpty();
 ```
 
 **Sammenligning:**
@@ -282,18 +387,28 @@ return resultat;
 // Resultat fra databasen: fx {"AKTIV" -> 5, "AFSLUTTET" -> 12}
 ```
 
-**Vigtige Map-metoder:**
+**Alle Map-metoder vi bruger — faktisk kode fra [`ForretningController.java`](src/main/java/com/springmad/bilabonnement/controller/ForretningController.java):**
 
-| Metode | Hvad den goer |
-|--------|--------------|
-| `put(key, value)` | Indsaetter eller overskriver en vaerdi |
-| `get(key)` | Henter vaerdien for en noegel |
-| `containsKey(key)` | Tjekker om noeglen findes |
-| `keySet()` | Returnerer alle noegler som et Set |
-| `values()` | Returnerer alle vaerdier |
-| `size()` | Antal noegel-vaerdi par |
-| `isEmpty()` | Er mappet tomt? |
-| `remove(key)` | Fjerner et noegel-vaerdi par |
+| Metode | Hvad den goer | Faktisk kode fra vores projekt |
+|--------|--------------|------|
+| `put(key, value)` | Indsaetter noegel-vaerdi par | `resultat.put(status, antal)` i ForretningJdbcRepository |
+| `get(key)` | Henter vaerdi for noegel | `statusFordeling.get("AKTIV")` i ForretningController |
+| `containsKey(key)` | Tjekker om noeglen findes | `statusFordeling.containsKey("AKTIV")` i ForretningController |
+| `keySet()` | Returnerer alle noegler som et Set | `statusFordeling.keySet()` i ForretningController |
+| `values()` | Returnerer alle vaerdier | `statusFordeling.values()` i ForretningController |
+| `size()` | Antal noegel-vaerdi par | `statusFordeling.size()` i ForretningController |
+| `isEmpty()` | Er mappet tomt? | `statusFordeling.isEmpty()` i ForretningController |
+| `remove(key)` | Fjerner et noegel-vaerdi par | Ikke brugt (vi sletter ikke statusser) |
+
+**Alle Set-metoder vi bruger — faktisk kode fra [`BilController.java`](src/main/java/com/springmad/bilabonnement/controller/BilController.java):**
+
+| Metode | Hvad den goer | Faktisk kode fra vores projekt |
+|--------|--------------|------|
+| `add(value)` | Tilfojer vaerdi (ignorerer dublet) | `unikkeAar.add(b.getAar())` i BilController |
+| `contains(value)` | Tjekker om vaerdi findes | `unikkeAar.contains(2024)` i BilController |
+| `size()` | Antal elementer | `unikkeAar.size()` i BilController |
+| `isEmpty()` | Er settet tomt? | `unikkeAar.isEmpty()` i BilController |
+| `add()` returnerer `false` ved dublet | Fanger dubletter | `setBeskrivelser.add(beskrivelse)` i SkadeService |
 
 ---
 

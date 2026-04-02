@@ -55,15 +55,47 @@ public class AbonnementController {
             return "abonnement-opret";
         }
 
+        // ===== Exception Handling: try, catch, throw, throws, finally =====
+        // try: indeholder kode der KAN fejle (fx database-kald).
+        // catch: fanger en specifik exception og haandterer den.
+        //        Flere catch-blokke kan fange forskellige typer exceptions.
+        // finally: koerer ALTID, uanset om der var en exception eller ej.
+        //          Bruges til oprydning (fx logning, ressource-frigoerelse).
+        // throw: bruges i AbonnementService til at kaste exceptions (se service-laget).
+        // throws: bruges i RowMapper-metoder til at erklare at de KAN kaste SQLException.
         try {
             // Controller -> Service -> Repository
+            // Servicen kan kaste IllegalArgumentException eller IllegalStateException (throw).
+            // Repository kan kaste EmptyResultDataAccessException hvis kunden ikke findes.
             abonnementService.opretAbonnementHvisMuligt(
                     kundeNavn, bilId.intValue(), startdato, slutdato, maanedligPris
             );
+
         } catch (EmptyResultDataAccessException e) {
+            // Catch blok 1: fanger database-fejl (kunden findes ikke i databasen).
+            // Programmet crasher IKKE — vi viser en fejlbesked til brugeren i stedet.
             model.addAttribute("fejl", "Kunden findes ikke. Opret kunden foerst under /kunder.");
             model.addAttribute("biler", bilService.findAll());
             return "abonnement-opret";
+
+        } catch (IllegalArgumentException e) {
+            // Catch blok 2: fanger ugyldigt input (tomt kundenavn, negativ pris).
+            // e.getMessage() returnerer den besked der blev givet med throw.
+            model.addAttribute("fejl", e.getMessage());
+            model.addAttribute("biler", bilService.findAll());
+            return "abonnement-opret";
+
+        } catch (IllegalStateException e) {
+            // Catch blok 3: fanger logisk fejl (kunden har allerede et aktivt abonnement).
+            model.addAttribute("fejl", e.getMessage());
+            model.addAttribute("biler", bilService.findAll());
+            return "abonnement-opret";
+
+        } finally {
+            // Finally-blokken koerer ALTID — uanset om der var en exception eller ej.
+            // Bruges typisk til oprydning: lukke forbindelser, logning osv.
+            // Her logger vi at forsoget blev gennemfoert (til fejlsoegning).
+            System.out.println("Abonnement-oprettelse forsoegte for kunde: " + kundeNavn);
         }
 
         return "redirect:/abonnementer";

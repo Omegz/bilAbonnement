@@ -23,43 +23,53 @@ Tre ting arbejder sammen:
 
 **Klasse:** [`RolleDefinitioner`](src/main/java/com/springmad/bilabonnement/model/RolleDefinitioner.java) (i `model/RolleDefinitioner.java`)
 
-**Problemet UDEN Singleton:**
-Roller som "DATAREGISTRERING" og "SKADE_OG_UDBEDRING" var hardcodet som strenge i 3 forskellige controllers.
+### UDEN Singleton (problemet)
+
+Roller var hardcodet som strenge i 3 forskellige controllers.
 Hvis man stavede forkert eet sted (fx "DATAREGISTERING" uden det sidste R), ville rolle-checket fejle stille.
 
-**Loesningen MED Singleton:**
+```java
+// FOER — hardcodet streng direkte i controlleren:
+if (!"DATAREGISTRERING".equals(medarbejder.getRolle())) { ... }
+
+// I en anden controller:
+if (!"SKADE_OG_UDBEDRING".equals(medarbejder.getRolle())) { ... }
+
+// Problem: hvis man skriver "DATAREGISTERING" (mangler R) i een controller,
+// fejler login stille — ingen kompileringsfejl, ingen advarsel.
+```
+
+### MED Singleton (loesningen)
+
 Alle roller, statusser og kontrakttyper er samlet i EEN klasse med EEN instans.
 Alle controllers henter vaerdierne fra den samme kilde.
 
-### Hvordan ser koden ud?
-
+**Faktisk kode fra [`RolleDefinitioner.java`](src/main/java/com/springmad/bilabonnement/model/RolleDefinitioner.java):**
 ```java
-// I RolleDefinitioner.java:
-private static RolleDefinitioner instance;  // Det ene statiske felt
+// Fra RolleDefinitioner.java:
+private static RolleDefinitioner instance;
 
-private RolleDefinitioner() { }             // Privat konstruktoer
+private RolleDefinitioner() {
+}
 
-public static RolleDefinitioner getInstance() {  // Eneste adgangspunkt
+public static RolleDefinitioner getInstance() {
     if (instance == null) {
-        instance = new RolleDefinitioner();       // Oprettes kun foerste gang
+        instance = new RolleDefinitioner();
     }
-    return instance;                              // Altid samme objekt
+    return instance;
 }
 ```
 
-### Hvordan bruges den i controllers?
-
-**Foer (hardcodet streng):**
+**Faktisk kode fra [`DataregistreringController.java`](src/main/java/com/springmad/bilabonnement/controller/DataregistreringController.java):**
 ```java
-if (!"DATAREGISTRERING".equals(medarbejder.getRolle())) { ... }
-```
-
-**Efter (Singleton):**
-```java
-if (!RolleDefinitioner.getInstance().getRolleDataregistrering().equals(medarbejder.getRolle())) { ... }
+// Fra DataregistreringController.opretLejeaftale():
+if (medarbejder == null || !RolleDefinitioner.getInstance().getRolleDataregistrering().equals(medarbejder.getRolle())) {
+    return fejl(model, "Du har ikke rettigheder til at registrere lejeaftaler (forkert rolle/login).");
+}
 ```
 
 `getInstance()` returnerer altid det SAMME objekt — det er kernen i Singleton.
+Hvis nogen staver rollen forkert nu, faar de en kompileringsfejl (metoden findes ikke).
 
 ### Hvor i projektet bruges den?
 

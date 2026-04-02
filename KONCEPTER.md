@@ -222,31 +222,65 @@ graph LR
 | **Indhold** | CSS, billeder, JavaScript | HTML-sider (Thymeleaf) |
 | **Hvem serverer?** | Browseren henter direkte | Controlleren sender via Thymeleaf |
 | **Data fra server?** | Nej — uaendret | Ja — data indlejret med `th:text`, `th:each` osv. |
-| **Eksempel** | `style.css` | `biler.html` med alle biler fra databasen |
+| **Eksempel** | [`style.css`](src/main/resources/static/css/style.css) | `biler.html` med alle biler fra databasen |
+
+### UDEN external CSS (problemet)
+
+```html
+<!-- FOER — inline/internal CSS i HVER template-fil: -->
+<head>
+    <style>
+        body { font-family: Arial; margin: 30px; }
+        .fejl { color: red; }
+        table { border-collapse: collapse; width: 100%; }
+        /* ... 50-180 linjer CSS gentaget i HVER fil ... */
+    </style>
+</head>
+<!-- Problem: 12 filer x ~100 linjer = ~1200 linjer duplikeret CSS.
+     Aendring af en farve kraever at man retter i ALLE 12 filer. -->
+```
+
+### MED external CSS (loesningen)
+
+**Faktisk kode fra alle templates (fx [`kunder.html`](src/main/resources/templates/kunder.html)):**
+```html
+<!-- EFTER — 1 linje der linker til den ene CSS-fil: -->
+<head>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<!-- Loesning: al CSS staar i static/css/style.css (1 fil).
+     Aendring eet sted paaviker alle 12 sider automatisk. -->
+```
 
 ---
 
 ## Application Properties og Environment Variables
 
-### application.properties
-
-Konfigurationsfil for Spring Boot applikationen.
-Ligger i `src/main/resources/application.properties`.
+### UDEN environment variables (problemet)
 
 ```properties
+# FOER — passwords hardcodet direkte i application.properties:
+spring.datasource.url=jdbc:mysql://gateway01.eu-central-1.prod.aws.tidbcloud.com:4000/bil_db
+spring.datasource.username=479TnvBCBeyNUDJ.root
+spring.datasource.password=2Pfphg2mLFGXjD6x
+# Problem: application.properties committes til Git.
+# Alle der har adgang til Git kan se passwords.
+# Passwords er synlige i koden.
+```
+
+### MED environment variables (loesningen)
+
+**Faktisk kode fra [`application.properties`](src/main/resources/application.properties):**
+```properties
+# Fra application.properties:
 spring.application.name=bilAbonnement
-
-# PORT har en fallback (9091) fordi porten ikke er foelsom data.
 server.port=${PORT:9091}
-
-# Database-credentials har INGEN fallback — de SKAL komme fra .env filen.
-# Passwords maa aldrig staa hardcodet i application.properties.
 spring.datasource.url=${SPRING_DATASOURCE_URL}
 spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
 spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
-
-# Driveren er ikke foelsom, saa den staar direkte her.
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+# Loesning: passwords staar i .env filen (som er i .gitignore).
+# application.properties indeholder kun variabelnavne, ingen vaerdier.
 ```
 
 | Indstilling | Hvad den goer | Foelsom? |
@@ -376,35 +410,41 @@ De erstatter XML-konfiguration og goer koden enklere.
 
 ### @Controller vs @RestController
 
-```
-@Controller     -> returnerer et VIEW (HTML-side via Thymeleaf)
-@RestController -> returnerer DATA (JSON) direkte til browseren
+Huskeregl: **"Controller viser sider, RestController giver data."**
 
-Huskeregl: "Controller viser sider, RestController giver data."
-```
+**UDEN @RestController** — @Controller returnerer HTML:
 
-**@Controller eksempel** (returnerer HTML):
+**Faktisk kode fra [`BilController.java`](src/main/java/com/springmad/bilabonnement/controller/BilController.java):**
 ```java
-@Controller
-public class BilController {
-    @GetMapping("/biler")
-    public String bilerPage(Model model) {
-        model.addAttribute("biler", bilService.findAll());
-        return "biler";  // -> templates/biler.html
+// Fra BilController.bilerPage():
+@GetMapping
+public String bilerPage(Model model) {
+    model.addAttribute("bil", new Bil());
+    List<Bil> biler = bilService.findAll();
+    model.addAttribute("biler", biler);
+    TreeSet<Integer> unikkeAar = new TreeSet<>();
+    for (Bil b : biler) {
+        unikkeAar.add(b.getAar());
     }
+    model.addAttribute("unikkeAar", unikkeAar);
+    return "biler";
 }
+// Returnerer et VIEW-navn ("biler") -> Spring finder templates/biler.html
+// Browseren faar en HTML-side med data indlejret via Thymeleaf.
+// Problem: hvis en JavaScript-app eller mobil-app vil have data, faar den HTML i stedet.
 ```
 
-**@RestController eksempel** (returnerer JSON):
+**MED @RestController** — returnerer JSON direkte:
+
+**Faktisk kode fra [`ApiController.java`](src/main/java/com/springmad/bilabonnement/controller/ApiController.java):**
 ```java
-@RestController
-@RequestMapping("/api")
-public class ApiController {
-    @GetMapping("/biler")
-    public List<Bil> alleBiler() {
-        return bilService.findAll();  // -> JSON: [{"id":1,"navn":"Toyota",...}]
-    }
+// Fra ApiController.alleBiler():
+@GetMapping("/biler")
+public List<Bil> alleBiler() {
+    return bilService.findAll();
 }
+// Returnerer DATA direkte som JSON: [{"id":1,"navn":"Toyota Yaris","aar":2022}, ...]
+// Loesning: enhver klient (browser, app, JavaScript) kan bruge dataen.
 ```
 
 ### @RequestParam vs @PathVariable
@@ -419,19 +459,21 @@ Begge henter vaerdier fra URL'en, men paa forskellige maader:
 @PathVariable bruges til: slet, vis detaljer, opdater (med id i URL'en)
 ```
 
-**@RequestParam eksempel:**
+**Faktisk kode fra [`SkadeController.java`](src/main/java/com/springmad/bilabonnement/controller/SkadeController.java)** — @RequestParam:
 ```java
+// Fra SkadeController.visSide():
 @GetMapping("/opret")
-public String visSide(@RequestParam(required = false) Integer kundeId) {
-    // URL: /skader/opret?kundeId=3  ->  kundeId = 3
-}
+public String visSide(@RequestParam(required = false) Integer kundeId,
+                      @RequestParam(required = false) Integer abonnementId,
+                      Model model,
+                      HttpSession session) {
 ```
 
-**@PathVariable eksempel:**
+**Faktisk kode fra [`KundeController.java`](src/main/java/com/springmad/bilabonnement/controller/KundeController.java)** — @PathVariable:
 ```java
+// Fra KundeController.sletKunde():
 @GetMapping("/slet/{id}")
 public String sletKunde(@PathVariable int id) {
-    // URL: /kunder/slet/5  ->  id = 5
     kundeService.sletKunde(id);
     return "redirect:/kunder";
 }
@@ -459,32 +501,31 @@ public String sletKunde(@PathVariable int id) {
 Autowiring er Spring's maade at automatisk "indsaette" afhaengigheder i en klasse,
 uden at man selv behoever at oprette objekterne med `new`.
 
-### Problemet UDEN @Autowired
+### UDEN @Autowired (problemet)
 
 ```java
-// UDEN Autowired — man opretter objekter manuelt med new
+// FOER — manuelt med new:
 public class BilController {
-    private BilService bilService = new BilService();  // FORKERT
-    // Problemer:
-    //   - Vi skal selv styre alle objekter
-    //   - BilService har selv brug for BilRepository — hvem opretter det?
-    //   - Svært at teste (vi kan ikke bytte til en mock)
+    private BilService bilService = new BilService();  // VIRKER IKKE
+    // Problem 1: BilService har selv brug for BilRepository — hvem opretter det?
+    // Problem 2: BilRepository har brug for JdbcTemplate — hvem opretter det?
+    // Problem 3: Vi skal styre ALLE objekters livscyklus selv
 }
 ```
 
-### Loesningen MED @Autowired
+### MED @Autowired (loesningen)
 
+**Faktisk kode fra [`BilController.java`](src/main/java/com/springmad/bilabonnement/controller/BilController.java):**
 ```java
-// MED Autowired — Spring opretter og indsaetter objektet automatisk
-public class BilController {
-    @Autowired
-    private BilService bilService;  // Spring saetter dette felt automatisk
-    // Fordele:
-    //   - Vi skriver aldrig "new BilService()"
-    //   - Spring styrer objektets livscyklus
-    //   - Spring indsaetter ogsaa BilRepository i BilService automatisk
-}
+// Fra BilController.java:
+@Autowired
+private BilService bilService;
+// Spring opretter BilService automatisk og indsaetter den her.
+// Vi skriver aldrig "new BilService()".
 ```
+
+Spring ser `@Autowired` og loser hele kaeden automatisk:
+BilController -> BilService -> BilRepository -> JdbcTemplate.
 
 ### Hele kaeden med @Autowired
 
@@ -542,69 +583,52 @@ Naar vi henter data fra databasen med JdbcTemplate, faar vi et **ResultSet** til
 ResultSet er raekker af raa data — vi skal konvertere dem til Java-objekter.
 Det goer vi med en **RowMapper**.
 
-### ResultSet
+### UDEN BeanPropertyRowMapper — manuel RowMapper (problemet)
 
-Et objekt i Java (JDBC) der repraesenterer data hentet fra databasen via en SQL-query.
-Hver raekke i ResultSet svarer til een raekke i databasetabellen.
+Man henter HVERT felt manuelt fra ResultSet og saetter det paa objektet.
+Mange linjer kode, risiko for stavefejl i kolonnenavne.
 
-Man henter vaerdier manuelt med `rs.getXxx()` metoder.
-
-**Faktisk kode fra BilRepository.java:**
+**Faktisk kode fra [`BilRepository.java`](src/main/java/com/springmad/bilabonnement/repository/BilRepository.java):**
 ```java
 // Fra BilRepository — vi henter HVERT felt fra ResultSet manuelt:
 private final RowMapper<Bil> bilRowMapper = (rs, rowNum) -> {
     Bil bil = new Bil();
-    bil.setId(rs.getInt("id"));
-    bil.setNavn(rs.getString("navn"));
-    bil.setAar(rs.getInt("aar"));
-    bil.setStartsdato(rs.getDate("startsdato") != null ? rs.getDate("startsdato").toLocalDate() : null);
-    bil.setSlutsdato(rs.getDate("slutsdato") != null ? rs.getDate("slutsdato").toLocalDate() : null);
+    bil.setId(rs.getInt("id"));                    // manuelt
+    bil.setNavn(rs.getString("navn"));              // manuelt
+    bil.setAar(rs.getInt("aar"));                   // manuelt
+    bil.setStartsdato(rs.getDate("startsdato") != null ? rs.getDate("startsdato").toLocalDate() : null);  // manuelt
+    bil.setSlutsdato(rs.getDate("slutsdato") != null ? rs.getDate("slutsdato").toLocalDate() : null);     // manuelt
     return bil;
 };
-```
 
-### RowMapper (manuel)
-
-Et interface som kortlaegger HVER raekke i ResultSet til et Java-objekt.
-Man skriver selv mapping-koden for hvert felt.
-
-**Bruges i:** [`BilRepository`](src/main/java/com/springmad/bilabonnement/repository/BilRepository.java), [`AbonnementJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/AbonnementJdbcRepository.java)
-
-**Faktisk kode fra BilRepository.java:**
-```java
-// Fra BilRepository.findAll():
 public List<Bil> findAll() {
     String sql = "SELECT id, navn, aar, startsdato, slutsdato FROM biler";
     return jdbc.query(sql, bilRowMapper);
 }
+// Problem: 5 felter = 5 linjer manual mapping.
+// Hvis vi skriver rs.getString("navnn") (stavefejl), crasher det ved koersel.
+// Vi SKAL bruge manuel RowMapper her fordi rs.getDate().toLocalDate() kraever type-konvertering.
 ```
 
-**Hvornaar bruger man manuel RowMapper?**
-- Naar man skal konvertere typer (fx `java.sql.Date` til `LocalDate` som i BilRepository)
-- Naar kolonnenavne i SQL'en IKKE matcher feltnavne (fx aliaser i JOIN-queries)
-- Naar man vil have fuld kontrol over mappingen
+### MED BeanPropertyRowMapper (loesningen)
 
-### BeanPropertyRowMapper (automatisk)
+Spring mapper AUTOMATISK kolonner til felter baseret paa navne.
+Nul manuel mapping, nul risiko for stavefejl.
 
-En standard-implementering af RowMapper som AUTOMATISK mapper kolonner til felter.
-Den matcher kolonnenavne med getters/setters i Java-klassen.
-
-**Bruges i:** [`KundeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java), [`BrugerJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/BrugerJdbcRepository.java)
-
-**Faktisk kode fra KundeJdbcRepository.java:**
+**Faktisk kode fra [`KundeJdbcRepository.java`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java):**
 ```java
 // Fra KundeJdbcRepository.findAll():
-// Kolonner: id, navn, email, telefon -> matcher setId(), setNavn(), setEmail(), setTelefon()
 public List<Kunde> findAll() {
     String sql = "SELECT id, navn, email, telefon FROM kunder";
     return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Kunde.class));
 }
+// Loesning: 1 linje i stedet for 4 linjer manuel mapping.
+// Spring matcher automatisk: kolonne "navn" -> setNavn(), "email" -> setEmail() osv.
 ```
 
-**Faktisk kode fra BrugerJdbcRepository.java:**
+**Faktisk kode fra [`BrugerJdbcRepository.java`](src/main/java/com/springmad/bilabonnement/repository/BrugerJdbcRepository.java):**
 ```java
 // Fra BrugerJdbcRepository.findByNavnOgPassword():
-// Kolonner: id, navn, alder, rolle, password -> matcher setId(), setNavn(), setAlder(), setRolle(), setPassword()
 public Bruger findByNavnOgPassword(String navn, String password) {
     String sql = "SELECT id, navn, alder, rolle, password FROM brugere WHERE navn = ? AND password = ? LIMIT 1";
     List<Bruger> resultater = jdbcTemplate.query(sql,
@@ -612,12 +636,13 @@ public Bruger findByNavnOgPassword(String navn, String password) {
             navn, password);
     return resultater.stream().findFirst().orElse(null);
 }
+// Loesning: 5 kolonner mappes automatisk til 5 felter. Ingen rs.getXxx() noedvendig.
 ```
 
-**Hvornaar bruger man BeanPropertyRowMapper?**
-- Naar kolonnenavne i databasen MATCHER feltnavne i Java-klassen
-- Naar Java-klassen har en tom konstruktoer og getters/setters
-- Naar man vil spare tid og skrive mindre kode
+### Hvornaar bruger man hvilken?
+
+- **Manuel RowMapper** naar man skal konvertere typer (fx `Date` -> `LocalDate`) eller kolonnenavne ikke matcher
+- **BeanPropertyRowMapper** naar kolonnenavne matcher feltnavne og man vil spare tid
 
 ### Sammenligning
 

@@ -178,9 +178,23 @@ Iterator **skjuler** den kompleksitet — vi kalder bare `hasNext()` og `next()`
 
 **Hvor i projektet:** [`SkadeService.gyldigSkadeliste()`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java)
 
-**Hvorfor:** Fanger duplikerede skadebeskrivelser. `add()` returnerer `false` naar vaerdien allerede findes.
+**UDEN HashSet (problemet):**
+```java
+// FOER — nested loop til at finde dubletter:
+for (int i = 0; i < beskrivelser.size(); i++) {
+    for (int j = i + 1; j < beskrivelser.size(); j++) {
+        if (beskrivelser.get(i).equals(beskrivelser.get(j))) {
+            return false;  // Duplikat
+        }
+    }
+}
+// Problem: to loops inde i hinanden = langsomt (O(n^2)).
+// Med 100 skader = 10.000 sammenligninger.
+```
 
-**Faktisk kode fra projektet:**
+**MED HashSet (loesningen):**
+
+**Faktisk kode fra [`SkadeService.java`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java):**
 ```java
 // Fra SkadeService.gyldigSkadeliste():
 HashSet<String> setBeskrivelser = new HashSet<>();
@@ -195,6 +209,8 @@ for (int i = 0; i < beskrivelser.size(); i++) {
     }
 }
 return true;
+// Loesning: add() returnerer false ved dublet. Kun 1 loop (O(n)).
+// Med 100 skader = 100 opslag i stedet for 10.000.
 ```
 
 ---
@@ -239,7 +255,18 @@ model.addAttribute("unikkeAar", unikkeAar);
 
 **Hvorfor:** Taeller antal abonnementer per status. Noeglen er statusteksten, vaerdien er antallet.
 
-**Faktisk kode fra projektet:**
+**UDEN HashMap (problemet):**
+```java
+// FOER — separate variabler for hver status:
+int antalAktive = 0;
+int antalAfsluttede = 0;
+// Problem: hvis der kommer en ny status (fx "PAUSET"), skal vi tilfoeje en ny variabel.
+// Vi ved ikke paa forhaand hvilke statusser der findes i databasen.
+```
+
+**MED HashMap (loesningen):**
+
+**Faktisk kode fra [`ForretningJdbcRepository.java`](src/main/java/com/springmad/bilabonnement/repository/ForretningJdbcRepository.java):**
 ```java
 // Fra ForretningJdbcRepository.antalAbonnementerPerStatus():
 HashMap<String, Integer> resultat = new HashMap<>();

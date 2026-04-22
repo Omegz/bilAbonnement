@@ -48,7 +48,6 @@ Alt du har brug for at forstaa i dette projekt, forklaret saa simpelt som muligt
 |---|---|---|---|---|
 | `@SpringBootApplication` | "Start hele applikationen" | Aktiverer auto-konfiguration, starter Tomcat-serveren | Taendingsnoegle til en bil — starter alt | `@SpringBootApplication` paa BilAbonnementApplication |
 | `@Controller` | "Denne klasse modtager HTTP-requests og returnerer HTML" | Spring ved at klassen haandterer browserforespøergsler | En receptionist der modtager gaester og viser dem til et varelse (HTML-side) | `@Controller` paa BilController |
-| `@RestController` | "Denne klasse returnerer DATA (JSON) i stedet for HTML" | Returnerer raa data til browseren / apps | En automat der giver varer direkte, uden receptionist | `@RestController` paa ApiController |
 | `@Service` | "Denne klasse indeholder forretningslogik" | Spring ved at klassen er service-laget | En manager der styrer hvad der skal ske — kalder de rigtige folk | `@Service` paa BilService |
 | `@Repository` | "Denne klasse taler med databasen" | Spring ved at klassen haandterer data | En arkivar der henter og gemmer dokumenter i arkivet (databasen) | `@Repository` paa BilRepository |
 | `@Autowired` | "Spring, indsaet dette objekt automatisk" | Vi skriver aldrig `new BilService()` — Spring goer det for os | En automatisk doer der aabner naar du kommer — du behoever ikke selv aabne | `@Autowired private BilService bilService;` |

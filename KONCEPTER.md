@@ -524,22 +524,17 @@ De erstatter XML-konfiguration og goer koden enklere.
 | Annotation | Hvad den goer | Hvor vi bruger den |
 |---|---|---|
 | `@Controller` | Markerer en klasse der haandterer HTTP-requests og returnerer **HTML views** | Alle controllers (BilController, AuthController osv.) |
-| `@RestController` | Markerer en klasse der returnerer **data (JSON)** i stedet for HTML | [`ApiController`](src/main/java/com/springmad/bilabonnement/controller/ApiController.java) (`/api/biler`, `/api/kunder`, `/api/dashboard`) |
 | `@Service` | Markerer en klasse som forretningslogik-lag | Alle services (BilService, KundeService osv.) |
 | `@Repository` | Markerer en klasse som databaseadgangs-lag | Alle repositories (BilRepository, KundeJdbcRepository osv.) |
 | `@Autowired` | Spring indsaetter en dependency automatisk (dependency injection) | Alle felter i controllers, services og repositories |
 | `@GetMapping` | Haandterer HTTP GET-requests (hente data, vise sider) | Alle GET-endpoints |
 | `@PostMapping` | Haandterer HTTP POST-requests (sende/oprette data) | Alle POST-endpoints |
-| `@RequestMapping` | Saetter en basis-URL for alle endpoints i en controller | `@RequestMapping("/biler")`, `@RequestMapping("/api")` osv. |
+| `@RequestMapping` | Saetter en basis-URL for alle endpoints i en controller | `@RequestMapping("/biler")`, `@RequestMapping("/kunder")` osv. |
 | `@RequestParam` | Henter vaerdier fra query-parametre i URL'en (fx `?status=active`) | Login-formular, skade-filtrering osv. |
 | `@PathVariable` | Henter vaerdier direkte fra URL-stien (fx `/kunder/slet/5` -> id=5) | Slet-endpoint i KundeController |
 | `@ModelAttribute` | Binder formdata fra HTML til et Java-objekt automatisk | Opret bil, opret kunde, signup osv. |
 
-### @Controller vs @RestController
-
-Huskeregl: **"Controller viser sider, RestController giver data."**
-
-**UDEN @RestController** — @Controller returnerer HTML:
+### @Controller returnerer HTML
 
 **Faktisk kode fra [`BilController.java`](src/main/java/com/springmad/bilabonnement/controller/BilController.java):**
 ```java
@@ -558,20 +553,6 @@ public String bilerPage(Model model) {
 }
 // Returnerer et VIEW-navn ("biler") -> Spring finder templates/biler.html
 // Browseren faar en HTML-side med data indlejret via Thymeleaf.
-// Problem: hvis en JavaScript-app eller mobil-app vil have data, faar den HTML i stedet.
-```
-
-**MED @RestController** — returnerer JSON direkte:
-
-**Faktisk kode fra [`ApiController.java`](src/main/java/com/springmad/bilabonnement/controller/ApiController.java):**
-```java
-// Fra ApiController.alleBiler():
-@GetMapping("/biler")
-public List<Bil> alleBiler() {
-    return bilService.findAll();
-}
-// Returnerer DATA direkte som JSON: [{"id":1,"navn":"Toyota Yaris","aar":2022}, ...]
-// Loesning: enhver klient (browser, app, JavaScript) kan bruge dataen.
 ```
 
 ### @RequestParam vs @PathVariable
@@ -915,7 +896,6 @@ Vi skriver aldrig `new` for nogen af disse objekter. Spring goer det hele.
 | Controller | [`DataregistreringController`](src/main/java/com/springmad/bilabonnement/controller/DataregistreringController.java) | [`AbonnementService`](src/main/java/com/springmad/bilabonnement/service/AbonnementService.java), [`BilService`](src/main/java/com/springmad/bilabonnement/service/BilService.java), [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java), [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | Controller taler med services |
 | Controller | [`ForretningController`](src/main/java/com/springmad/bilabonnement/controller/ForretningController.java) | [`ForretningService`](src/main/java/com/springmad/bilabonnement/service/ForretningService.java), [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | Controller taler med services |
 | Controller | [`SkadeController`](src/main/java/com/springmad/bilabonnement/controller/SkadeController.java) | [`SkadeService`](src/main/java/com/springmad/bilabonnement/service/SkadeService.java), [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java), [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | Controller taler med services |
-| Controller | [`ApiController`](src/main/java/com/springmad/bilabonnement/controller/ApiController.java) | [`BilService`](src/main/java/com/springmad/bilabonnement/service/BilService.java), [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java), [`ForretningService`](src/main/java/com/springmad/bilabonnement/service/ForretningService.java) | RestController taler med services |
 | Service | [`BilService`](src/main/java/com/springmad/bilabonnement/service/BilService.java) | [`BilRepository`](src/main/java/com/springmad/bilabonnement/repository/BilRepository.java) | Service taler med repository |
 | Service | [`KundeService`](src/main/java/com/springmad/bilabonnement/service/KundeService.java) | [`KundeJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/KundeJdbcRepository.java) | Service taler med repository |
 | Service | [`BrugerService`](src/main/java/com/springmad/bilabonnement/service/BrugerService.java) | [`BrugerJdbcRepository`](src/main/java/com/springmad/bilabonnement/repository/BrugerJdbcRepository.java) | Service taler med repository |
@@ -1038,8 +1018,7 @@ public Bruger findByNavnOgPassword(String navn, String password) {
 | Static mappen indeholder CSS | Ja — [`style.css`](src/main/resources/static/css/style.css) (1 ekstern fil) |
 | Template mappen indeholder Thymeleaf HTML | Ja — 13 templates + fragments |
 | CSS er external (ikke inline) | Ja — alle templates linker til [`style.css`](src/main/resources/static/css/style.css), nul `<style>` blokke |
-| @Controller bruges til HTML views | Ja — 7 controllers returnerer Thymeleaf templates |
-| @RestController bruges til JSON data | Ja — [`ApiController`](src/main/java/com/springmad/bilabonnement/controller/ApiController.java) returnerer JSON paa `/api/*` |
+| @Controller bruges til HTML views | Ja — alle controllers returnerer Thymeleaf templates |
 | @PathVariable bruges til URL-sti vaerdier | Ja — [`KundeController`](src/main/java/com/springmad/bilabonnement/controller/KundeController.java): `/kunder/slet/{id}` |
 | @RequestParam bruges til query-parametre | Ja — login, skade-filtrering, abonnement-opret |
 | @ModelAttribute bruges til formular-binding | Ja — opret bil, opret kunde, signup |

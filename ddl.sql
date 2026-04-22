@@ -53,7 +53,7 @@ CREATE TABLE abonnementer (
 
                               udleveringssted_type VARCHAR(20) NOT NULL DEFAULT 'BILABONNEMENT',
                               leveringsform VARCHAR(20) NOT NULL DEFAULT 'AFHENTNING',
-                              leveringsadresse VARCHAR(255),
+                              leveringsafdeling VARCHAR(255),
 
                               CONSTRAINT fk_abonnement_bil
                                   FOREIGN KEY (bil_id) REFERENCES biler(id),
